@@ -32,8 +32,13 @@ export const API_ENDPOINTS = {
   PLANTILLAS: '/api/plantillas',
   PLANTILLA_BY_ID: (id: number) => `/api/plantillas/${id}`,
 
+  // Campos de plantilla
+  CAMPOS: (plantillaId: number) => `/api/plantillas/${plantillaId}/campos`,
+  CAMPO_BY_ID: (plantillaId: number, campoId: number) => `/api/plantillas/${plantillaId}/campos/${campoId}`,
+
   // Items
   ITEMS: '/api/items',
+  ITEM_BY_ID: (id: number) => `/api/items/${id}`,
 };
 
 // UI

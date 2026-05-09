@@ -55,6 +55,11 @@ export default function PersonajesPage() {
           <button style={s.btnPrimary} onClick={() => navigate('/personajes/nuevo')}>
             + Nuevo personaje
           </button>
+          {usuario?.is_admin && (
+            <button style={{ ...s.btnLogout, color: '#1a237e', borderColor: '#1a237e' }} onClick={() => navigate('/admin')}>
+              Panel Admin
+            </button>
+          )}
           <button style={s.btnLogout} onClick={logout}>Cerrar sesión</button>
         </div>
       </div>
