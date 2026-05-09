@@ -1,50 +1,27 @@
-import { useState, useEffect } from 'react'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import PrivateRoute from './components/PrivateRoute';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import PersonajesPage from './pages/PersonajesPage';
+import NuevoPersonajePage from './pages/NuevoPersonajePage';
+import BuilderPage from './pages/BuilderPage';
 
-function App() {
-  const [backendStatus, setBackendStatus] = useState({ message: 'Conectando...' })
-  const [personajes, setPersonajes] = useState([])
-
-  useEffect(() => {
-    fetch('/api/health')
-      .then(res => res.json())
-      .then(data => setBackendStatus(data))
-      .catch(() => setBackendStatus({ message: 'Backend no conectado' }))
-
-    fetch('/api/personajes', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
-    })
-      .then(res => res.ok ? res.json() : [])
-      .then(data => Array.isArray(data) ? setPersonajes(data) : null)
-      .catch(() => {})
-  }, [])
-
+export default function App() {
   return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif', maxWidth: '800px', margin: '0 auto' }}>
-      <h1>Gestor de Personajes de Rol</h1>
-
-      <div style={{ marginTop: '1rem', padding: '1rem', background: '#e3f2fd', borderRadius: '8px', border: '1px solid #2196f3' }}>
-        <p><strong>Backend:</strong> {backendStatus.message}</p>
-      </div>
-
-      <div style={{ marginTop: '2rem' }}>
-        <h2>Mis Personajes</h2>
-        {personajes.length === 0
-          ? <p style={{ color: '#888' }}>No hay personajes. Inicia sesión para ver los tuyos.</p>
-          : (
-            <ul>
-              {personajes.map(p => (
-                <li key={p.id_personaje}>
-                  <strong>{p.nombre}</strong> — {p.sistema_rol?.nombre}
-                  {p.descripcion && `: ${p.descripcion}`}
-                </li>
-              ))}
-            </ul>
-          )
-        }
-      </div>
-    </div>
-  )
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route element={<PrivateRoute />}>
+            <Route path="/" element={<Navigate to="/personajes" replace />} />
+            <Route path="/personajes" element={<PersonajesPage />} />
+            <Route path="/personajes/nuevo" element={<NuevoPersonajePage />} />
+            <Route path="/personajes/:personajeId/builder" element={<BuilderPage />} />
+          </Route>
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
+  );
 }
-
-export default App

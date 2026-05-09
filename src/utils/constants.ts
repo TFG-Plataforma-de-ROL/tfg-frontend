@@ -5,17 +5,35 @@ export const API_ENDPOINTS = {
   LOGIN: '/api/auth/login',
   REGISTER: '/api/auth/register',
   LOGOUT: '/api/auth/logout',
-  
-  // Usuarios
-  USERS: '/api/usuarios',
-  USER_BY_ID: (id: number) => `/api/usuarios/${id}`,
-  
-  // Tareas
-  TASKS: '/api/tareas',
-  TASK_BY_ID: (id: number) => `/api/tareas/${id}`,
-  
+
   // Health
   HEALTH: '/api/health',
+
+  // Sistemas de Rol
+  SISTEMAS_ROL: '/api/sistemas-rol',
+  SISTEMA_ROL_BY_ID: (id: number) => `/api/sistemas-rol/${id}`,
+
+  // Personajes
+  PERSONAJES: '/api/personajes',
+  PERSONAJE_BY_ID: (id: number) => `/api/personajes/${id}`,
+
+  // Fichas
+  FICHAS: (personajeId: number) => `/api/personajes/${personajeId}/fichas`,
+  FICHA_BY_ID: (personajeId: number, fichaId: number) =>
+    `/api/personajes/${personajeId}/fichas/${fichaId}`,
+
+  // CampoValor
+  VALORES: (personajeId: number, fichaId: number) =>
+    `/api/personajes/${personajeId}/fichas/${fichaId}/valores`,
+  VALOR_BY_ID: (personajeId: number, fichaId: number, valorId: number) =>
+    `/api/personajes/${personajeId}/fichas/${fichaId}/valores/${valorId}`,
+
+  // Plantillas
+  PLANTILLAS: '/api/plantillas',
+  PLANTILLA_BY_ID: (id: number) => `/api/plantillas/${id}`,
+
+  // Items
+  ITEMS: '/api/items',
 };
 
 // UI
