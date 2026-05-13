@@ -1,4 +1,3 @@
-// Definición de rutas de la aplicación
 export const ROUTES = {
   PUBLIC: {
     LOGIN: '/login',
@@ -8,15 +7,16 @@ export const ROUTES = {
   PRIVATE: {
     DASHBOARD: '/dashboard',
     PROFILE: '/profile',
-    SETTINGS: '/settings',
+    PERSONAJE_NUEVO: '/personaje/nuevo',
+    PERSONAJE_EDITAR: '/personaje/:id',
   },
-};
+} as const
 
 export const ROUTE_PATHS = [
   ROUTES.PUBLIC.LOGIN,
   ROUTES.PUBLIC.REGISTER,
-  ROUTES.PUBLIC.HOME,
   ROUTES.PRIVATE.DASHBOARD,
   ROUTES.PRIVATE.PROFILE,
-  ROUTES.PRIVATE.SETTINGS,
-];
+  ROUTES.PRIVATE.PERSONAJE_NUEVO,
+  ROUTES.PRIVATE.PERSONAJE_EDITAR,
+]
