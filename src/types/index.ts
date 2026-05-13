@@ -1,37 +1,39 @@
-// Tipos de Usuario
 export interface Usuario {
-  id: number;
-  nombre: string;
-  email: string;
-  avatar_url?: string | null;
-  created_at?: string;
+  id: number
+  nombre: string
+  email: string
+  avatar_url?: string | null
+  created_at?: string
 }
 
-// Tipos de Tarea
-export interface Tarea {
-  id: number;
-  titulo: string;
-  descripcion?: string;
-  completado: boolean;
-  usuario_id: number;
-  created_at?: string;
+export interface SistemaRol {
+  id_sistema_rol: number
+  nombre: string
+  descripcion?: string | null
 }
 
-// Tipos de Auth
+export interface Personaje {
+  id_personaje: number
+  id_usuario: number
+  id_sistema_rol: number
+  nombre: string
+  descripcion?: string | null
+  sistema_rol?: { id_sistema_rol: number; nombre: string }
+}
+
 export interface AuthContextType {
-  usuario: Usuario | null;
-  isLoading: boolean;
-  error: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (nombre: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
-  updateUsuario: (patch: Partial<Usuario>) => void;
+  usuario: Usuario | null
+  isLoading: boolean
+  error: string | null
+  login: (email: string, password: string) => Promise<void>
+  register: (nombre: string, email: string, password: string) => Promise<void>
+  logout: () => void
+  updateUsuario: (patch: Partial<Usuario>) => void
 }
 
-// Tipos de API Response
 export interface ApiResponse<T> {
-  status: string;
-  data?: T;
-  message?: string;
-  error?: string;
+  status: string
+  data?: T
+  message?: string
+  error?: string
 }
