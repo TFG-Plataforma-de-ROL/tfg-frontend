@@ -88,7 +88,12 @@ export function fichaToCharacterDraft(ficha: FichaDetalle): Partial<CharacterDra
 
   const combate = get<CharacterDraft['combate'] & { nivel?: number }>('combate')
   if (combate) {
-    draft.combate = { ca: combate.ca, pv_max: combate.pv_max, velocidad: combate.velocidad }
+    draft.combate = {
+      ca: combate.ca,
+      pv_max: combate.pv_max,
+      pv_actual: combate.pv_actual ?? combate.pv_max,
+      velocidad: combate.velocidad,
+    }
     if (combate.nivel !== undefined) draft.nivel = combate.nivel
   }
 

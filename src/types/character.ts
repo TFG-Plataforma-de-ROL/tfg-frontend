@@ -40,6 +40,7 @@ export interface SkillProficiencies {
 export interface CombatStats {
   ca: number
   pv_max: number
+  pv_actual: number
   velocidad: number
 }
 

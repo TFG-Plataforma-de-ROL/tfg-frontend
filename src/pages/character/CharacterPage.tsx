@@ -9,6 +9,7 @@ import { itemService } from '@/services/itemService'
 import type { Item } from '@/services/itemService'
 import type { CharacterDraft } from '@/types/character'
 import LeftPanel from './LeftPanel'
+import CenterPanel from './CenterPanel'
 import RightPanel from './RightPanel'
 
 const DEFAULT_DRAFT: CharacterDraft = {
@@ -18,7 +19,7 @@ const DEFAULT_DRAFT: CharacterDraft = {
   id_clase: null,
   id_trasfondo: null,
   stats: { fue: 10, des: 10, con: 10, int: 10, sab: 10, car: 10 },
-  combate: { ca: 10, pv_max: 8, velocidad: 30 },
+  combate: { ca: 10, pv_max: 8, pv_actual: 8, velocidad: 30 },
   salvaciones: { fue: false, des: false, con: false, int: false, sab: false, car: false },
   habilidades: {
     acrobacias: false, atletismo: false, engano: false, historia: false,
@@ -39,7 +40,6 @@ const DEFAULT_DRAFT: CharacterDraft = {
   },
 }
 
-// DnD 5e sistema_rol id — matches seed (id 1)
 const DND_SISTEMA_ROL_ID = 1
 
 export default function CharacterPage() {
@@ -59,7 +59,6 @@ export default function CharacterPage() {
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState<{ tipo: 'ok' | 'err'; texto: string } | null>(null)
 
-  // Load catalog data
   useEffect(() => {
     Promise.all([
       itemService.getItems('raza', DND_SISTEMA_ROL_ID),
@@ -72,23 +71,14 @@ export default function CharacterPage() {
     })
   }, [])
 
-  // Load existing character data when editing
   useEffect(() => {
-    if (!isEditing || !id) {
-      setLoading(false)
-      return
-    }
+    if (!isEditing || !id) { setLoading(false); return }
     const personajeIdNum = Number(id)
     setPersonajeId(personajeIdNum)
 
     fichaService.getFichas(personajeIdNum)
       .then(async (fichas) => {
-        if (fichas.length === 0) {
-          // Personaje exists but no ficha yet — this happens when navigating from dashboard
-          // We'll create the ficha on first save
-          setLoading(false)
-          return
-        }
+        if (fichas.length === 0) { setLoading(false); return }
         const ficha = fichas[0]
         setFichaId(ficha.id_ficha)
         const detalle = await fichaService.getFichaById(personajeIdNum, ficha.id_ficha)
@@ -115,33 +105,23 @@ export default function CharacterPage() {
       let pjId = personajeId
       let fId = fichaId
 
-      // Create personaje if new
       if (!pjId) {
-        const pj = await personajeService.createPersonaje({
-          nombre: draft.nombre,
-          id_sistema_rol: DND_SISTEMA_ROL_ID,
-        })
+        const pj = await personajeService.createPersonaje({ nombre: draft.nombre, id_sistema_rol: DND_SISTEMA_ROL_ID })
         pjId = pj.id_personaje
         setPersonajeId(pjId)
       } else {
-        // Update personaje name
         await personajeService.updatePersonaje(pjId, { nombre: draft.nombre })
       }
 
-      // Create ficha if not yet existing
       if (!fId) {
         const ficha = await fichaService.createFicha(pjId, draft.nombre, DND_SISTEMA_ROL_ID)
         fId = ficha.id_ficha
         setFichaId(fId)
       }
 
-      // Save campos
-      const campos = draftToCampos(draft)
-      await fichaService.saveCampos(pjId, fId, campos)
-
+      await fichaService.saveCampos(pjId, fId, draftToCampos(draft))
       setSaveMsg({ tipo: 'ok', texto: 'Personaje guardado' })
 
-      // Navigate to edit URL if we were on /nuevo
       if (!isEditing) {
         navigate(ROUTES.PRIVATE.PERSONAJE_EDITAR.replace(':id', String(pjId)), { replace: true })
       }
@@ -158,6 +138,7 @@ export default function CharacterPage() {
     window.open(`/api/personajes/${personajeId}/export`, '_blank')
   }
 
+  const razaItem  = razas.find((r) => r.id_item === draft.id_raza)  ?? null
   const claseItem = clases.find((c) => c.id_item === draft.id_clase) ?? null
 
   if (loading) {
@@ -201,10 +182,10 @@ export default function CharacterPage() {
         </div>
       </div>
 
-      {/* Two-column layout */}
+      {/* Three-column layout */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left panel */}
-        <div className="w-64 shrink-0 border-r border-border/40 p-4 overflow-y-auto">
+        {/* Left: race / class / background */}
+        <div className="w-52 shrink-0 border-r border-border/40 overflow-y-auto">
           <LeftPanel
             draft={draft}
             razas={razas}
@@ -214,9 +195,19 @@ export default function CharacterPage() {
           />
         </div>
 
-        {/* Right panel */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <RightPanel draft={draft} claseItem={claseItem} onChange={handleChange} />
+        {/* Center: stats, CA, HP, saves, skills */}
+        <div className="w-72 shrink-0 border-r border-border/40 overflow-y-auto p-4">
+          <CenterPanel
+            draft={draft}
+            razaItem={razaItem}
+            claseItem={claseItem}
+            onChange={handleChange}
+          />
+        </div>
+
+        {/* Right: tabs */}
+        <div className="flex-1 overflow-hidden p-4 flex flex-col">
+          <RightPanel draft={draft} onChange={handleChange} />
         </div>
       </div>
     </div>
