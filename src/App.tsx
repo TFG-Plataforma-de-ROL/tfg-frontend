@@ -4,6 +4,7 @@ import LoginPage from '@/pages/auth/LoginPage'
 import RegisterPage from '@/pages/auth/RegisterPage'
 import DashboardPage from '@/pages/dashboard/DashboardPage'
 import ProfilePage from '@/pages/profile/ProfilePage'
+import CharacterPage from '@/pages/character/CharacterPage'
 import Layout from '@/components/Layout'
 import ProtectedRoute from '@/components/ProtectedRoute'
 
@@ -16,8 +17,8 @@ function App() {
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route path={ROUTES.PRIVATE.DASHBOARD} element={<DashboardPage />} />
         <Route path={ROUTES.PRIVATE.PROFILE} element={<ProfilePage />} />
-        <Route path={ROUTES.PRIVATE.PERSONAJE_NUEVO} element={<div />} />
-        <Route path={ROUTES.PRIVATE.PERSONAJE_EDITAR} element={<div />} />
+        <Route path={ROUTES.PRIVATE.PERSONAJE_NUEVO} element={<CharacterPage />} />
+        <Route path={ROUTES.PRIVATE.PERSONAJE_EDITAR} element={<CharacterPage />} />
       </Route>
 
       <Route path="/" element={<Navigate to={ROUTES.PUBLIC.LOGIN} replace />} />

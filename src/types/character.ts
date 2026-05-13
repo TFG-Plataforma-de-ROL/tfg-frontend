@@ -1,0 +1,110 @@
+export interface StatBlock {
+  fue: number
+  des: number
+  con: number
+  int: number
+  sab: number
+  car: number
+}
+
+export interface SavingThrows {
+  fue: boolean
+  des: boolean
+  con: boolean
+  int: boolean
+  sab: boolean
+  car: boolean
+}
+
+export interface SkillProficiencies {
+  acrobacias: boolean
+  atletismo: boolean
+  engano: boolean
+  historia: boolean
+  intimidacion: boolean
+  interpretacion: boolean
+  investigacion: boolean
+  juegoDeManos: boolean
+  medicina: boolean
+  naturaleza: boolean
+  percepcion: boolean
+  perspicacia: boolean
+  persuasion: boolean
+  religion: boolean
+  sigilo: boolean
+  supervivencia: boolean
+  trato_con_animales: boolean
+  arcanos: boolean
+}
+
+export interface CombatStats {
+  ca: number
+  pv_max: number
+  velocidad: number
+}
+
+export interface WeaponEntry {
+  id: string
+  nombre: string
+  bonus_ataque: number
+  dano: string
+  tipo_dano: string
+}
+
+export interface EquipmentEntry {
+  id: string
+  nombre: string
+  cantidad: number
+}
+
+export interface SpellEntry {
+  id: string
+  nombre: string
+  nivel: number
+  escuela: string
+  descripcion: string
+}
+
+export interface FeatEntry {
+  id: string
+  nombre: string
+  descripcion: string
+}
+
+export interface CharacterDetalles {
+  historia: string
+  rasgos_de_personalidad: string
+  ideales: string
+  vinculos: string
+  defectos: string
+  apariencia: string
+  edad: string
+  altura: string
+  peso: string
+  ojos: string
+  piel: string
+  pelo: string
+}
+
+export interface CharacterDraft {
+  // Identidad
+  nombre: string
+  nivel: number
+  id_raza: number | null
+  id_clase: number | null
+  id_trasfondo: number | null
+
+  // Stats
+  stats: StatBlock
+  combate: CombatStats
+  salvaciones: SavingThrows
+  habilidades: SkillProficiencies
+  inspiracion: number  // 0-3
+
+  // Tabs
+  armas: WeaponEntry[]
+  equipo: EquipmentEntry[]
+  conjuros: SpellEntry[]
+  rasgos: FeatEntry[]
+  detalles: CharacterDetalles
+}
