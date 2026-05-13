@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 interface PerfilData {
@@ -226,7 +225,7 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
 
             {/* Editar nombre y email */}
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-5 sm:border-r sm:border-border sm:pr-6">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs uppercase tracking-wide text-muted-foreground flex items-center gap-1">
                   <Pencil className="h-3 w-3" /> Cambiar Nombre
@@ -270,8 +269,6 @@ export default function ProfilePage() {
                 <FeedbackMsg msg={emailMsg} />
               </div>
             </div>
-
-            <Separator orientation="vertical" className="hidden sm:block justify-self-center h-auto" />
 
             {/* Info de cuenta */}
             <div className="flex flex-col gap-3">
