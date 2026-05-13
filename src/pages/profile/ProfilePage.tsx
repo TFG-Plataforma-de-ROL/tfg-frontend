@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks';
 import { usuarioService } from '../../services/usuarioService';
 import { formatDate, validatePassword } from '../../utils/helpers';
@@ -8,6 +8,7 @@ interface PerfilData {
   id_usuario: number;
   nombre: string;
   email: string;
+  avatar_url: string | null;
   is_admin: boolean;
   created_at: string;
   personajes: Array<{
@@ -19,10 +20,15 @@ interface PerfilData {
 }
 
 export default function ProfilePage() {
-  const { usuario, login } = useAuth();
+  const { usuario, updateUsuario } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [perfil, setPerfil] = useState<PerfilData | null>(null);
   const [loadingPerfil, setLoadingPerfil] = useState(true);
+
+  // Avatar
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const [avatarMsg, setAvatarMsg] = useState<{ tipo: 'ok' | 'err'; texto: string } | null>(null);
 
   // Editar nombre
   const [editandoNombre, setEditandoNombre] = useState(false);
@@ -45,7 +51,26 @@ export default function ProfilePage() {
       .finally(() => setLoadingPerfil(false));
   }, []);
 
-  // ── Editar nombre ──────────────────────────────────────────────
+  // ── Avatar ────────────────────────────────────────────────────
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarLoading(true);
+    setAvatarMsg(null);
+    try {
+      const result = await usuarioService.uploadAvatar(file);
+      setPerfil((p) => p ? { ...p, avatar_url: result.avatar_url } : p);
+      updateUsuario({ avatar_url: result.avatar_url });
+      setAvatarMsg({ tipo: 'ok', texto: 'Avatar actualizado' });
+    } catch (err: any) {
+      setAvatarMsg({ tipo: 'err', texto: err.response?.data?.error ?? 'Error al subir la imagen' });
+    } finally {
+      setAvatarLoading(false);
+      e.target.value = '';
+    }
+  };
+
+  // ── Editar nombre ─────────────────────────────────────────────
   const handleStartEditNombre = () => {
     setNuevoNombre(perfil?.nombre ?? '');
     setNombreMsg(null);
@@ -59,6 +84,7 @@ export default function ProfilePage() {
     try {
       const updated = await usuarioService.updateNombre(nuevoNombre.trim());
       setPerfil((p) => p ? { ...p, nombre: updated.nombre } : p);
+      updateUsuario({ nombre: updated.nombre });
       setEditandoNombre(false);
       setNombreMsg({ tipo: 'ok', texto: 'Nombre actualizado' });
     } catch (err: any) {
@@ -68,7 +94,7 @@ export default function ProfilePage() {
     }
   };
 
-  // ── Cambiar contraseña ─────────────────────────────────────────
+  // ── Cambiar contraseña ────────────────────────────────────────
   const validatePassForm = (): boolean => {
     const errs: Record<string, string> = {};
     if (!currentPassword) errs.current = 'Introduce la contraseña actual';
@@ -99,6 +125,9 @@ export default function ProfilePage() {
     }
   };
 
+  const avatarSrc = perfil?.avatar_url ?? usuario?.avatar_url ?? null;
+  const initials = (perfil?.nombre ?? usuario?.nombre ?? '?').charAt(0).toUpperCase();
+
   if (loadingPerfil) {
     return <p style={{ color: 'rgba(255,255,255,0.4)' }}>Cargando perfil...</p>;
   }
@@ -107,10 +136,46 @@ export default function ProfilePage() {
     <div className="profile-page">
       <h2>Mi perfil</h2>
 
+      {/* ── Avatar ── */}
+      <div className="profile-card avatar-card">
+        <div className="avatar-section">
+          <div className="avatar-large">
+            {avatarSrc ? (
+              <img src={avatarSrc} alt="Avatar" />
+            ) : (
+              <span>{initials}</span>
+            )}
+            {avatarLoading && <div className="avatar-overlay">...</div>}
+          </div>
+          <div className="avatar-info">
+            <p className="avatar-name">{perfil?.nombre}</p>
+            <p className="avatar-email">{perfil?.email}</p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleAvatarChange}
+            />
+            <button
+              className="btn-ghost"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={avatarLoading}
+            >
+              {avatarLoading ? 'Subiendo...' : 'Cambiar avatar'}
+            </button>
+            {avatarMsg && (
+              <p className={avatarMsg.tipo === 'ok' ? 'msg-success' : 'msg-error'}>
+                {avatarMsg.texto}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* ── Información de cuenta ── */}
       <div className="profile-card">
         <h3>Información de cuenta</h3>
-
         <div className="info-row">
           <span className="info-label">Nombre</span>
           <span className="info-value">{perfil?.nombre}</span>
@@ -156,6 +221,25 @@ export default function ProfilePage() {
         )}
       </div>
 
+      {/* ── Personajes ── */}
+      <div className="profile-card">
+        <h3>Mis personajes ({perfil?.personajes.length ?? 0})</h3>
+        {perfil?.personajes.length === 0 ? (
+          <p className="empty-state">Todavía no has creado ningún personaje.</p>
+        ) : (
+          <div className="personaje-list">
+            {perfil?.personajes.map((p) => (
+              <div key={p.id_personaje} className="personaje-item">
+                <span className="personaje-nombre">{p.nombre}</span>
+                {p.sistema_rol && (
+                  <span className="personaje-sistema">{p.sistema_rol.nombre}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* ── Cambiar contraseña ── */}
       <div className="profile-card">
         <h3>Cambiar contraseña</h3>
@@ -193,38 +277,17 @@ export default function ProfilePage() {
             />
             {passErrors.confirm && <span className="msg-error">{passErrors.confirm}</span>}
           </div>
-
           {passMsg && (
             <p className={passMsg.tipo === 'ok' ? 'msg-success' : 'msg-error'}>
               {passMsg.texto}
             </p>
           )}
-
           <div>
             <button type="submit" className="btn-primary" disabled={passLoading}>
               {passLoading ? 'Actualizando...' : 'Actualizar contraseña'}
             </button>
           </div>
         </form>
-      </div>
-
-      {/* ── Personajes ── */}
-      <div className="profile-card">
-        <h3>Mis personajes ({perfil?.personajes.length ?? 0})</h3>
-        {perfil?.personajes.length === 0 ? (
-          <p className="empty-state">Todavía no has creado ningún personaje.</p>
-        ) : (
-          <div className="personaje-list">
-            {perfil?.personajes.map((p) => (
-              <div key={p.id_personaje} className="personaje-item">
-                <span className="personaje-nombre">{p.nombre}</span>
-                {p.sistema_rol && (
-                  <span className="personaje-sistema">{p.sistema_rol.nombre}</span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );

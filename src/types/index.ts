@@ -3,6 +3,7 @@ export interface Usuario {
   id: number;
   nombre: string;
   email: string;
+  avatar_url?: string | null;
   created_at?: string;
 }
 
@@ -24,6 +25,7 @@ export interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (nombre: string, email: string, password: string) => Promise<void>;
   logout: () => void;
+  updateUsuario: (patch: Partial<Usuario>) => void;
 }
 
 // Tipos de API Response

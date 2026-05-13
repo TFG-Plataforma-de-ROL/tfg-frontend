@@ -60,6 +60,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.removeItem('auth_token');
   };
 
+  const updateUsuario = (patch: Partial<Usuario>) => {
+    setUsuario((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...patch };
+      localStorage.setItem('user_data', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const value: AuthContextType = {
     usuario,
     isLoading,
@@ -67,6 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     login,
     register,
     logout,
+    updateUsuario,
   };
 
   return (

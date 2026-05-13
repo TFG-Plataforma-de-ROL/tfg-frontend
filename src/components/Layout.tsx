@@ -26,7 +26,11 @@ export default function Layout() {
             onClick={() => navigate(ROUTES.PRIVATE.PROFILE)}
             title={`Perfil de ${usuario?.nombre}`}
           >
-            {initials}
+            {usuario?.avatar_url ? (
+              <img src={usuario.avatar_url} alt={usuario.nombre} className="avatar-img" />
+            ) : (
+              initials
+            )}
           </button>
           <button className="btn-logout" onClick={handleLogout}>
             Cerrar sesión
