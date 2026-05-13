@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Pencil, Camera } from 'lucide-react'
 import { useAuth } from '@/hooks'
 import { usuarioService } from '@/services/usuarioService'
-import { formatDate, validateEmail, validatePassword } from '@/utils/helpers'
+import { formatDate, validateEmail } from '@/utils/helpers'
 import { ROUTES } from '@/config/routes'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -45,27 +45,16 @@ export default function ProfilePage() {
   const [perfil, setPerfil] = useState<PerfilData | null>(null)
   const [loadingPerfil, setLoadingPerfil] = useState(true)
 
-  // Avatar
   const [avatarLoading, setAvatarLoading] = useState(false)
   const [avatarMsg, setAvatarMsg] = useState<Msg | null>(null)
 
-  // Nombre
   const [nuevoNombre, setNuevoNombre] = useState('')
   const [nombreLoading, setNombreLoading] = useState(false)
   const [nombreMsg, setNombreMsg] = useState<Msg | null>(null)
 
-  // Email
   const [nuevoEmail, setNuevoEmail] = useState('')
   const [emailLoading, setEmailLoading] = useState(false)
   const [emailMsg, setEmailMsg] = useState<Msg | null>(null)
-
-  // Contraseña
-  const [currentPassword, setCurrentPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmNewPassword, setConfirmNewPassword] = useState('')
-  const [passErrors, setPassErrors] = useState<Record<string, string>>({})
-  const [passLoading, setPassLoading] = useState(false)
-  const [passMsg, setPassMsg] = useState<Msg | null>(null)
 
   useEffect(() => {
     usuarioService.getMe()
@@ -77,7 +66,6 @@ export default function ProfilePage() {
       .finally(() => setLoadingPerfil(false))
   }, [])
 
-  // ── Avatar ────────────────────────────────────────────────────
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -97,7 +85,6 @@ export default function ProfilePage() {
     }
   }
 
-  // ── Nombre ────────────────────────────────────────────────────
   const handleSaveNombre = async () => {
     if (!nuevoNombre.trim() || nuevoNombre.trim() === perfil?.nombre) return
     setNombreLoading(true)
@@ -115,7 +102,6 @@ export default function ProfilePage() {
     }
   }
 
-  // ── Email ─────────────────────────────────────────────────────
   const handleSaveEmail = async () => {
     if (!nuevoEmail.trim() || nuevoEmail.trim() === perfil?.email) return
     if (!validateEmail(nuevoEmail.trim())) {
@@ -136,39 +122,6 @@ export default function ProfilePage() {
     }
   }
 
-  // ── Contraseña ────────────────────────────────────────────────
-  const validatePassForm = (): boolean => {
-    const errs: Record<string, string> = {}
-    if (!currentPassword) errs.current = 'Introduce la contraseña actual'
-    if (!newPassword) errs.new = 'Introduce la nueva contraseña'
-    else if (!validatePassword(newPassword)) errs.new = 'Mínimo 6 caracteres'
-    if (!confirmNewPassword) errs.confirm = 'Confirma la nueva contraseña'
-    else if (newPassword !== confirmNewPassword) errs.confirm = 'Las contraseñas no coinciden'
-    setPassErrors(errs)
-    return Object.keys(errs).length === 0
-  }
-
-  const handleChangePassword = async (e: { preventDefault(): void }) => {
-    e.preventDefault()
-    setPassMsg(null)
-    if (!validatePassForm()) return
-    setPassLoading(true)
-    try {
-      await usuarioService.updatePassword(currentPassword, newPassword)
-      setCurrentPassword('')
-      setNewPassword('')
-      setConfirmNewPassword('')
-      setPassErrors({})
-      setPassMsg({ tipo: 'ok', texto: 'Contraseña actualizada correctamente' })
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: { error?: string } } }
-      setPassMsg({ tipo: 'err', texto: e.response?.data?.error ?? 'Error al cambiar contraseña' })
-    } finally {
-      setPassLoading(false)
-    }
-  }
-
-  // Personajes agrupados por sistema
   const personajesPorSistema = (perfil?.personajes ?? []).reduce<
     Record<string, PerfilData['personajes']>
   >((acc, p) => {
@@ -192,7 +145,7 @@ export default function ProfilePage() {
   return (
     <div className="flex flex-col items-center gap-8 max-w-3xl mx-auto">
 
-      {/* ── Avatar ── */}
+      {/* Avatar */}
       <div className="flex flex-col items-center gap-3 pt-4">
         <div className="relative">
           <Avatar className="h-24 w-24 border-2 border-border">
@@ -216,7 +169,7 @@ export default function ProfilePage() {
         <FeedbackMsg msg={avatarMsg} />
       </div>
 
-      {/* ── Información ── */}
+      {/* Información */}
       <Card className="w-full border-border/50">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Información</CardTitle>
@@ -224,7 +177,6 @@ export default function ProfilePage() {
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
 
-            {/* Editar nombre y email */}
             <div className="flex flex-col gap-5 sm:border-r sm:border-border sm:pr-6">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs uppercase tracking-wide text-muted-foreground flex items-center gap-1">
@@ -270,7 +222,6 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Info de cuenta */}
             <div className="flex flex-col gap-3">
               <p className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
                 Información de Cuenta
@@ -300,7 +251,7 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
-      {/* ── Lista de Personajes ── */}
+      {/* Lista de Personajes */}
       <Card className="w-full border-border/50">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Lista Personajes</CardTitle>
@@ -328,61 +279,6 @@ export default function ProfilePage() {
               </div>
             ))
           )}
-        </CardContent>
-      </Card>
-
-      {/* ── Cambiar contraseña ── */}
-      <Card className="w-full border-border/50">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Cambiar Contraseña</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleChangePassword} noValidate className="flex flex-col gap-4 max-w-sm">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="currentPass" className="text-xs uppercase tracking-wide text-muted-foreground">Contraseña actual</Label>
-              <Input
-                id="currentPass"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                autoComplete="current-password"
-                className={passErrors.current ? 'border-destructive' : ''}
-              />
-              {passErrors.current && <span className="text-xs text-destructive">{passErrors.current}</span>}
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="newPass" className="text-xs uppercase tracking-wide text-muted-foreground">Nueva contraseña</Label>
-              <Input
-                id="newPass"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                autoComplete="new-password"
-                className={passErrors.new ? 'border-destructive' : ''}
-              />
-              {passErrors.new && <span className="text-xs text-destructive">{passErrors.new}</span>}
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="confirmPass" className="text-xs uppercase tracking-wide text-muted-foreground">Confirmar nueva contraseña</Label>
-              <Input
-                id="confirmPass"
-                type="password"
-                value={confirmNewPassword}
-                onChange={(e) => setConfirmNewPassword(e.target.value)}
-                autoComplete="new-password"
-                className={passErrors.confirm ? 'border-destructive' : ''}
-              />
-              {passErrors.confirm && <span className="text-xs text-destructive">{passErrors.confirm}</span>}
-            </div>
-
-            <FeedbackMsg msg={passMsg} />
-
-            <Button type="submit" disabled={passLoading} className="w-full">
-              {passLoading ? 'Actualizando...' : 'Actualizar contraseña'}
-            </Button>
-          </form>
         </CardContent>
       </Card>
     </div>
