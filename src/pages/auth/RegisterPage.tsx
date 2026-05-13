@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks';
 import { validateEmail, validatePassword } from '../../utils/helpers';
@@ -34,7 +34,7 @@ export default function RegisterPage() {
     return Object.keys(next).length === 0;
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
     setServerError('');
     if (!validate()) return;
@@ -43,7 +43,7 @@ export default function RegisterPage() {
       await register(nombre.trim(), email, password);
       navigate(ROUTES.PRIVATE.DASHBOARD);
     } catch (err: any) {
-      setServerError(err.response?.data?.message || 'Error al registrarse');
+      setServerError(err.response?.data?.error || err.response?.data?.message || 'Error al registrarse');
     }
   };
 

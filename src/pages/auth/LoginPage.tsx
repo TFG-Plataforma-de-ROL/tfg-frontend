@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks';
 import { validateEmail } from '../../utils/helpers';
@@ -23,7 +23,7 @@ export default function LoginPage() {
     return Object.keys(next).length === 0;
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
     setServerError('');
     if (!validate()) return;
@@ -32,7 +32,7 @@ export default function LoginPage() {
       await login(email, password);
       navigate(ROUTES.PRIVATE.DASHBOARD);
     } catch (err: any) {
-      setServerError(err.response?.data?.message || 'Credenciales incorrectas');
+      setServerError(err.response?.data?.error || err.response?.data?.message || 'Credenciales incorrectas');
     }
   };
 
