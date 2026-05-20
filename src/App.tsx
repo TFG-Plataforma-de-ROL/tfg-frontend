@@ -6,6 +6,7 @@ import DashboardPage from '@/pages/dashboard/DashboardPage'
 import ProfilePage from '@/pages/profile/ProfilePage'
 import CharacterPage from '@/pages/character/CharacterPage'
 import Layout from '@/components/Layout'
+import LayoutFull from '@/components/LayoutFull'
 import ProtectedRoute from '@/components/ProtectedRoute'
 
 function App() {
@@ -17,6 +18,9 @@ function App() {
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route path={ROUTES.PRIVATE.DASHBOARD} element={<DashboardPage />} />
         <Route path={ROUTES.PRIVATE.PROFILE} element={<ProfilePage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute><LayoutFull /></ProtectedRoute>}>
         <Route path={ROUTES.PRIVATE.PERSONAJE_NUEVO} element={<CharacterPage />} />
         <Route path={ROUTES.PRIVATE.PERSONAJE_EDITAR} element={<CharacterPage />} />
       </Route>

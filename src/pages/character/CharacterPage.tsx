@@ -11,6 +11,7 @@ import type { CharacterDraft } from '@/types/character'
 import LeftPanel from './LeftPanel'
 import CenterPanel from './CenterPanel'
 import RightPanel from './RightPanel'
+import ItemSelectionDialog from './ItemSelectionDialog'
 
 const DEFAULT_DRAFT: CharacterDraft = {
   nombre: '',
@@ -54,6 +55,8 @@ export default function CharacterPage() {
   const [razas, setRazas] = useState<Item[]>([])
   const [clases, setClases] = useState<Item[]>([])
   const [trasfondos, setTrasfondos] = useState<Item[]>([])
+
+  const [dialogOpen, setDialogOpen] = useState<'raza' | 'clase' | 'trasfondo' | null>(null)
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -141,6 +144,12 @@ export default function CharacterPage() {
   const razaItem  = razas.find((r) => r.id_item === draft.id_raza)  ?? null
   const claseItem = clases.find((c) => c.id_item === draft.id_clase) ?? null
 
+  const dialogConfig = dialogOpen ? {
+    raza:      { title: 'Raza',      items: razas,      currentId: draft.id_raza,      field: 'id_raza'      as const },
+    clase:     { title: 'Clase',     items: clases,     currentId: draft.id_clase,     field: 'id_clase'     as const },
+    trasfondo: { title: 'Trasfondo', items: trasfondos, currentId: draft.id_trasfondo, field: 'id_trasfondo' as const },
+  }[dialogOpen] : null
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -150,6 +159,7 @@ export default function CharacterPage() {
   }
 
   return (
+    <>
     <div className="flex flex-col h-full gap-0">
       {/* Header bar */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-border/40 shrink-0">
@@ -192,6 +202,7 @@ export default function CharacterPage() {
             clases={clases}
             trasfondos={trasfondos}
             onChange={handleChange}
+            onOpenDialog={setDialogOpen}
           />
         </div>
 
@@ -211,5 +222,17 @@ export default function CharacterPage() {
         </div>
       </div>
     </div>
+
+    {dialogConfig && (
+      <ItemSelectionDialog
+        open={Boolean(dialogOpen)}
+        onClose={() => setDialogOpen(null)}
+        title={dialogConfig.title}
+        items={dialogConfig.items}
+        currentId={dialogConfig.currentId}
+        onAccept={(id) => handleChange({ [dialogConfig.field]: id })}
+      />
+    )}
+    </>
   )
 }
