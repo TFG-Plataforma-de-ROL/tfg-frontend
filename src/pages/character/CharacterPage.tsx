@@ -6,11 +6,12 @@ import { ROUTES } from '@/config/routes'
 import { personajeService } from '@/services/personajeService'
 import { fichaService, draftToCampos, fichaToCharacterDraft } from '@/services/fichaService'
 import { itemService } from '@/services/itemService'
-import type { Item } from '@/services/itemService'
+import type { Item, ItemDetalle } from '@/services/itemService'
 import type { CharacterDraft } from '@/types/character'
 import LeftPanel from './LeftPanel'
 import CenterPanel from './CenterPanel'
 import RightPanel from './RightPanel'
+import TopBar from './TopBar'
 import ItemSelectionDialog from './ItemSelectionDialog'
 
 const DEFAULT_DRAFT: CharacterDraft = {
@@ -58,6 +59,10 @@ export default function CharacterPage() {
 
   const [dialogOpen, setDialogOpen] = useState<'raza' | 'clase' | 'trasfondo' | null>(null)
 
+  const [razaDetalle,      setRazaDetalle]      = useState<ItemDetalle | null>(null)
+  const [claseDetalle,     setClaseDetalle]     = useState<ItemDetalle | null>(null)
+  const [trasfondoDetalle, setTrasfondoDetalle] = useState<ItemDetalle | null>(null)
+
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState<{ tipo: 'ok' | 'err'; texto: string } | null>(null)
@@ -91,6 +96,21 @@ export default function CharacterPage() {
       })
       .catch(() => setLoading(false))
   }, [id, isEditing])
+
+  useEffect(() => {
+    if (!draft.id_raza) { setRazaDetalle(null); return }
+    itemService.getItemById(draft.id_raza).then(setRazaDetalle).catch(() => setRazaDetalle(null))
+  }, [draft.id_raza])
+
+  useEffect(() => {
+    if (!draft.id_clase) { setClaseDetalle(null); return }
+    itemService.getItemById(draft.id_clase).then(setClaseDetalle).catch(() => setClaseDetalle(null))
+  }, [draft.id_clase])
+
+  useEffect(() => {
+    if (!draft.id_trasfondo) { setTrasfondoDetalle(null); return }
+    itemService.getItemById(draft.id_trasfondo).then(setTrasfondoDetalle).catch(() => setTrasfondoDetalle(null))
+  }, [draft.id_trasfondo])
 
   const handleChange = useCallback((partial: Partial<CharacterDraft>) => {
     setDraft((prev) => ({ ...prev, ...partial }))
@@ -141,9 +161,6 @@ export default function CharacterPage() {
     window.open(`/api/personajes/${personajeId}/export`, '_blank')
   }
 
-  const razaItem  = razas.find((r) => r.id_item === draft.id_raza)  ?? null
-  const claseItem = clases.find((c) => c.id_item === draft.id_clase) ?? null
-
   const dialogConfig = dialogOpen ? {
     raza:      { title: 'Raza',      items: razas,      currentId: draft.id_raza,      field: 'id_raza'      as const },
     clase:     { title: 'Clase',     items: clases,     currentId: draft.id_clase,     field: 'id_clase'     as const },
@@ -192,10 +209,11 @@ export default function CharacterPage() {
         </div>
       </div>
 
-      {/* Three-column layout */}
+      {/* Main area: LeftPanel full height + columna derecha con TopBar encima */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left: race / class / background */}
-        <div className="w-52 shrink-0 border-r border-border/40 overflow-y-auto">
+
+        {/* Left: llega desde el header hasta abajo */}
+        <div className="w-60 shrink-0 border-r border-border/40 overflow-y-auto">
           <LeftPanel
             draft={draft}
             razas={razas}
@@ -206,19 +224,31 @@ export default function CharacterPage() {
           />
         </div>
 
-        {/* Center: stats, CA, HP, saves, skills */}
-        <div className="w-72 shrink-0 border-r border-border/40 overflow-y-auto p-4">
-          <CenterPanel
-            draft={draft}
-            razaItem={razaItem}
-            claseItem={claseItem}
-            onChange={handleChange}
-          />
-        </div>
+        {/* Columna derecha: TopBar + Center + Right */}
+        <div className="flex-1 flex flex-col overflow-hidden">
 
-        {/* Right: tabs */}
-        <div className="flex-1 overflow-hidden p-4 flex flex-col">
-          <RightPanel draft={draft} onChange={handleChange} />
+          {/* TopBar: nombre + nivel + stats + CA + HP + salv */}
+          <TopBar draft={draft} claseDetalle={claseDetalle} onChange={handleChange} />
+
+          {/* Center + Right panels */}
+          <div className="flex flex-1 overflow-hidden">
+
+            {/* Center: velocidad, inspiración, habilidades */}
+            <div className="w-64 shrink-0 border-r border-border/40 overflow-hidden flex flex-col">
+              <CenterPanel
+                draft={draft}
+                razaDetalle={razaDetalle}
+                claseDetalle={claseDetalle}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Right: tabs */}
+            <div className="flex-1 overflow-hidden p-4 flex flex-col">
+              <RightPanel draft={draft} onChange={handleChange} />
+            </div>
+
+          </div>
         </div>
       </div>
     </div>
