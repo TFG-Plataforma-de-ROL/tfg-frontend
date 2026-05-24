@@ -44,7 +44,8 @@ export function draftToCampos(
   draft: CharacterDraft
 ): Array<{ nombre_campo: string; valor?: unknown; id_item_valor?: number }> {
   const campos: Array<{ nombre_campo: string; valor?: unknown; id_item_valor?: number }> = [
-    { nombre_campo: 'stats',       valor: draft.stats },
+    { nombre_campo: 'ability_setup', valor: draft.abilitySetup },
+    { nombre_campo: 'stats',         valor: draft.stats },
     { nombre_campo: 'combate',     valor: { ...draft.combate, nivel: draft.nivel } },
     { nombre_campo: 'salvaciones', valor: draft.salvaciones },
     { nombre_campo: 'habilidades', valor: draft.habilidades },
@@ -82,6 +83,9 @@ export function fichaToCharacterDraft(ficha: FichaDetalle): Partial<CharacterDra
   }
 
   const draft: Partial<CharacterDraft> = {}
+
+  const abilitySetup = get<CharacterDraft['abilitySetup']>('ability_setup')
+  if (abilitySetup) draft.abilitySetup = abilitySetup
 
   const stats = get<CharacterDraft['stats']>('stats')
   if (stats) draft.stats = stats

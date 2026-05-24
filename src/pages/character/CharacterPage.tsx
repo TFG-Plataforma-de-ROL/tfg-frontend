@@ -13,6 +13,7 @@ import CenterPanel from './CenterPanel'
 import RightPanel from './RightPanel'
 import TopBar from './TopBar'
 import ItemSelectionDialog from './ItemSelectionDialog'
+import AbilityWizardModal from './AbilityWizardModal'
 
 const DEFAULT_DRAFT: CharacterDraft = {
   nombre: '',
@@ -20,6 +21,7 @@ const DEFAULT_DRAFT: CharacterDraft = {
   id_raza: null,
   id_clase: null,
   id_trasfondo: null,
+  abilitySetup: null,
   stats: { fue: 10, des: 10, con: 10, int: 10, sab: 10, car: 10 },
   combate: { ca: 10, pv_max: 8, pv_actual: 8, velocidad: 30 },
   salvaciones: { fue: false, des: false, con: false, int: false, sab: false, car: false },
@@ -58,6 +60,7 @@ export default function CharacterPage() {
   const [trasfondos, setTrasfondos] = useState<Item[]>([])
 
   const [dialogOpen, setDialogOpen] = useState<'raza' | 'clase' | 'trasfondo' | null>(null)
+  const [wizardOpen, setWizardOpen] = useState(false)
 
   const [razaDetalle,      setRazaDetalle]      = useState<ItemDetalle | null>(null)
   const [claseDetalle,     setClaseDetalle]     = useState<ItemDetalle | null>(null)
@@ -224,6 +227,7 @@ export default function CharacterPage() {
             trasfondoDetalle={trasfondoDetalle}
             onChange={handleChange}
             onOpenDialog={setDialogOpen}
+            onOpenWizard={() => setWizardOpen(true)}
           />
         </div>
 
@@ -266,6 +270,28 @@ export default function CharacterPage() {
         onAccept={(id) => handleChange({ [dialogConfig.field]: id })}
       />
     )}
+
+    <AbilityWizardModal
+      open={wizardOpen}
+      onClose={() => setWizardOpen(false)}
+      initial={draft.abilitySetup}
+      trasfondoCaracteristicas={(() => {
+        if (!trasfondoDetalle?.datos) return null
+        const d = trasfondoDetalle.datos as { trasfondo?: { mejora_caracteristicas?: string[] } }
+        return d.trasfondo?.mejora_caracteristicas ?? null
+      })()}
+      onAccept={(setup) => {
+        const stats = {
+          fue: setup.baseScores.fue + setup.trasfondoBonuses.fue,
+          des: setup.baseScores.des + setup.trasfondoBonuses.des,
+          con: setup.baseScores.con + setup.trasfondoBonuses.con,
+          int: setup.baseScores.int + setup.trasfondoBonuses.int,
+          sab: setup.baseScores.sab + setup.trasfondoBonuses.sab,
+          car: setup.baseScores.car + setup.trasfondoBonuses.car,
+        }
+        handleChange({ abilitySetup: setup, stats })
+      }}
+    />
     </>
   )
 }

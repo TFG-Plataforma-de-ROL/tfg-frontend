@@ -1,6 +1,15 @@
-import { User, Sword, BookOpen, ChevronRight } from 'lucide-react'
+import { User, Sword, BookOpen, ChevronRight, Sliders } from 'lucide-react'
 import type { Item, ItemDetalle } from '@/services/itemService'
 import type { CharacterDraft } from '@/types/character'
+import { getMod, formatMod } from '@/utils/dnd'
+
+const STAT_ORDER: (keyof CharacterDraft['stats'])[] = ['fue', 'des', 'con', 'int', 'sab', 'car']
+
+const METHOD_LABEL: Record<NonNullable<CharacterDraft['abilitySetup']>['method'], string> = {
+  standard_array: 'Matriz estándar',
+  point_buy:      'Compra de puntos',
+  roll:           'Tirada de dados',
+}
 
 interface Props {
   draft: CharacterDraft
@@ -12,6 +21,7 @@ interface Props {
   trasfondoDetalle: ItemDetalle | null
   onChange: (partial: Partial<CharacterDraft>) => void
   onOpenDialog: (type: 'raza' | 'clase' | 'trasfondo') => void
+  onOpenWizard: () => void
 }
 
 interface CardProps {
@@ -110,9 +120,55 @@ function TagList({ items }: { items: string[] }) {
   )
 }
 
+// ── Card de características ────────────────────────────────────────────────
+
+function CharacteristicsCard({ draft, onClick }: { draft: CharacterDraft; onClick: () => void }) {
+  const setup = draft.abilitySetup
+  const finalStats = setup
+    ? STAT_ORDER.reduce((acc, s) => ({
+        ...acc,
+        [s]: setup.baseScores[s] + setup.trasfondoBonuses[s],
+      }), {} as CharacterDraft['stats'])
+    : null
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <button
+        type="button"
+        onClick={onClick}
+        className="w-full flex items-center gap-3 p-3 rounded-lg border border-border/60 bg-secondary/40 hover:bg-secondary/80 transition-colors text-left"
+      >
+        <Sliders className="h-5 w-5 text-primary shrink-0" />
+        <div className="flex flex-col items-start min-w-0 flex-1">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground leading-none mb-0.5">
+            Características
+          </span>
+          <span className={`text-sm font-medium truncate w-full ${setup ? 'text-foreground' : 'text-muted-foreground/50'}`}>
+            {setup ? METHOD_LABEL[setup.method] : 'Sin configurar'}
+          </span>
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+      </button>
+      {finalStats && (
+        <div className="px-1">
+          <div className="grid grid-cols-6 gap-1">
+            {STAT_ORDER.map(s => (
+              <div key={s} className="flex flex-col items-center p-1 rounded bg-secondary/40 border border-border/40">
+                <span className="text-[9px] text-muted-foreground uppercase">{s}</span>
+                <span className="font-bold text-xs">{finalStats[s]}</span>
+                <span className="text-[9px] text-muted-foreground">{formatMod(getMod(finalStats[s]))}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Panel principal ────────────────────────────────────────────────────────
 
-export default function LeftPanel({ draft, razas, clases, trasfondos, razaDetalle, claseDetalle, trasfondoDetalle, onOpenDialog }: Props) {
+export default function LeftPanel({ draft, razas, clases, trasfondos, razaDetalle, claseDetalle, trasfondoDetalle, onOpenDialog, onOpenWizard }: Props) {
   const prof = Math.ceil(draft.nivel / 4) + 1
 
   const razaItem = razas.find((r) => r.id_item === draft.id_raza)
@@ -187,6 +243,10 @@ export default function LeftPanel({ draft, razas, clases, trasfondos, razaDetall
           </div>
         )}
       </SelectionCard>
+
+      <hr className="border-border/40" />
+
+      <CharacteristicsCard draft={draft} onClick={onOpenWizard} />
 
       <div className="mt-auto pt-4 border-t border-border/40 flex flex-col gap-1 text-xs text-muted-foreground">
         <p>Bono de competencia: <span className="font-bold text-foreground">+{prof}</span></p>

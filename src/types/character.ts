@@ -87,6 +87,14 @@ export interface CharacterDetalles {
   pelo: string
 }
 
+export type AbilityMethod = 'standard_array' | 'point_buy' | 'roll'
+
+export interface AbilitySetup {
+  method: AbilityMethod
+  baseScores: StatBlock
+  trasfondoBonuses: StatBlock
+}
+
 export interface CharacterDraft {
   // Identidad
   nombre: string
@@ -96,6 +104,7 @@ export interface CharacterDraft {
   id_trasfondo: number | null
 
   // Stats
+  abilitySetup: AbilitySetup | null
   stats: StatBlock
   combate: CombatStats
   salvaciones: SavingThrows
