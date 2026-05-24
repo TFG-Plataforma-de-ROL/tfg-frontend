@@ -1,15 +1,20 @@
 import { useState } from 'react'
 import type { CharacterDraft, WeaponEntry, EquipmentEntry, SpellEntry, FeatEntry } from '@/types/character'
+import type { ItemDetalle } from '@/services/itemService'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Plus, Trash2 } from 'lucide-react'
+import { getRazaInfo, getClaseInfo, getTrasfondoInfo } from '@/utils/characterDetails'
 
 interface Props {
   draft: CharacterDraft
   onChange: (partial: Partial<CharacterDraft>) => void
+  razaDetalle: ItemDetalle | null
+  claseDetalle: ItemDetalle | null
+  trasfondoDetalle: ItemDetalle | null
 }
 
 // ── Armas ──────────────────────────────────────────────────────────────────
@@ -134,34 +139,70 @@ function SpellsTab({ draft, onChange }: Props) {
 
 // ── Rasgos / Dotes ─────────────────────────────────────────────────────────
 
-function FeatsTab({ draft, onChange }: Props) {
-  const add = () => {
-    const entry: FeatEntry = { id: crypto.randomUUID(), nombre: '', descripcion: '' }
-    onChange({ rasgos: [...draft.rasgos, entry] })
-  }
+function FeatSection({ title, items }: { title: string; items: string[] }) {
+  if (items.length === 0) return null
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[11px] font-semibold text-primary uppercase tracking-wide mb-1">{title}</span>
+      {items.map((item) => (
+        <div key={item} className="flex items-center gap-1.5 py-0.5 pl-1">
+          <span className="w-1 h-1 rounded-full bg-muted-foreground/40 shrink-0" />
+          <span className="text-xs text-foreground">{item}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function FeatsTab({ draft, onChange, razaDetalle, claseDetalle, trasfondoDetalle }: Props) {
+  const razaInfo = getRazaInfo(razaDetalle)
+  const claseInfo = getClaseInfo(claseDetalle)
+  const trasfondoInfo = getTrasfondoInfo(trasfondoDetalle)
+
+  const trasfondoFeats = trasfondoInfo?.dote ? [trasfondoInfo.dote] : []
+  const claseFeats = claseInfo?.rasgosN1 ?? []
+  const razaFeats = razaInfo?.rasgos ?? []
+  const hasAutoFeats = claseFeats.length > 0 || trasfondoFeats.length > 0 || razaFeats.length > 0
+
   const update = (id: string, partial: Partial<FeatEntry>) =>
     onChange({ rasgos: draft.rasgos.map((f) => f.id === id ? { ...f, ...partial } : f) })
   const remove = (id: string) =>
     onChange({ rasgos: draft.rasgos.filter((f) => f.id !== id) })
 
   return (
-    <div className="flex flex-col gap-2">
-      {draft.rasgos.map((f) => (
-        <div key={f.id} className="flex flex-col gap-1 p-2 rounded-md bg-secondary/60 border border-border/40">
-          <div className="flex gap-1 items-center">
-            <Input value={f.nombre} onChange={(e) => update(f.id, { nombre: e.target.value })}
-              placeholder="Atacante feroz" className="h-7 text-xs bg-background border-border/60 flex-1" />
-            <button type="button" onClick={() => remove(f.id)} className="text-destructive hover:text-destructive/80 p-1">
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+    <div className="flex flex-col gap-4">
+      {hasAutoFeats && (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+          <div className="flex flex-col gap-3">
+            <FeatSection title="Rasgos de Clase" items={claseFeats} />
+            <FeatSection title="Rasgos de Trasfondo" items={trasfondoFeats} />
           </div>
-          <Input value={f.descripcion} onChange={(e) => update(f.id, { descripcion: e.target.value })}
-            placeholder="Descripción..." className="h-6 text-[11px] bg-background border-border/40" />
+          <div className="flex flex-col gap-3">
+            <FeatSection title="Rasgos de Raza" items={razaFeats} />
+          </div>
         </div>
-      ))}
-      <Button type="button" variant="outline" size="sm" onClick={add} className="mt-1 border-dashed border-border/60 text-xs h-7">
-        <Plus className="h-3 w-3 mr-1" /> Añadir rasgo
-      </Button>
+      )}
+
+      {hasAutoFeats && <hr className="border-border/40" />}
+
+      <div className="flex flex-col gap-2">
+        {draft.rasgos.length > 0 && (
+          <span className="text-[11px] font-semibold text-primary uppercase tracking-wide">Rasgos propios</span>
+        )}
+        {draft.rasgos.map((f) => (
+          <div key={f.id} className="flex flex-col gap-1 p-2 rounded-md bg-secondary/60 border border-border/40">
+            <div className="flex gap-1 items-center">
+              <Input value={f.nombre} onChange={(e) => update(f.id, { nombre: e.target.value })}
+                placeholder="Atacante feroz" className="h-7 text-xs bg-background border-border/60 flex-1" />
+              <button type="button" onClick={() => remove(f.id)} className="text-destructive hover:text-destructive/80 p-1">
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <Input value={f.descripcion} onChange={(e) => update(f.id, { descripcion: e.target.value })}
+              placeholder="Descripción..." className="h-6 text-[11px] bg-background border-border/40" />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -213,7 +254,7 @@ function DetailsTab({ draft, onChange }: Props) {
 
 // ── RightPanel principal ───────────────────────────────────────────────────
 
-export default function RightPanel({ draft, onChange }: Props) {
+export default function RightPanel({ draft, onChange, razaDetalle, claseDetalle, trasfondoDetalle }: Props) {
   const [tab, setTab] = useState('armas')
 
   return (
@@ -231,7 +272,9 @@ export default function RightPanel({ draft, onChange }: Props) {
         <TabsContent value="defensa"  className="mt-0"><DefenseTab   draft={draft} /></TabsContent>
         <TabsContent value="equipo"   className="mt-0"><EquipmentTab draft={draft} onChange={onChange} /></TabsContent>
         <TabsContent value="conjuros" className="mt-0"><SpellsTab    draft={draft} onChange={onChange} /></TabsContent>
-        <TabsContent value="rasgos"   className="mt-0"><FeatsTab     draft={draft} onChange={onChange} /></TabsContent>
+        <TabsContent value="rasgos"   className="mt-0">
+          <FeatsTab draft={draft} onChange={onChange} razaDetalle={razaDetalle} claseDetalle={claseDetalle} trasfondoDetalle={trasfondoDetalle} />
+        </TabsContent>
         <TabsContent value="detalles" className="mt-0"><DetailsTab   draft={draft} onChange={onChange} /></TabsContent>
       </div>
     </Tabs>

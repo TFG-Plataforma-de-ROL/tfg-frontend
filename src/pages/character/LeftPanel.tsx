@@ -2,6 +2,7 @@ import { User, Sword, BookOpen, ChevronRight, Sliders } from 'lucide-react'
 import type { Item, ItemDetalle } from '@/services/itemService'
 import type { CharacterDraft } from '@/types/character'
 import { getMod, formatMod } from '@/utils/dnd'
+import { getRazaInfo, getClaseInfo, getTrasfondoInfo } from '@/utils/characterDetails'
 
 const STAT_ORDER: (keyof CharacterDraft['stats'])[] = ['fue', 'des', 'con', 'int', 'sab', 'car']
 
@@ -54,46 +55,6 @@ function SelectionCard({ icon: Icon, label, selected, onClick, children }: CardP
       {children}
     </div>
   )
-}
-
-// ── Helpers para extraer datos del campo `datos` del ItemDetalle ───────────
-
-interface Rasgo { nombre: string }
-type AnyObj = Record<string, unknown>
-
-function getRazaInfo(detalle: ItemDetalle | null) {
-  if (!detalle?.datos) return null
-  const d = detalle.datos as AnyObj
-  const especie = (d.especie ?? d) as AnyObj
-  const tamaño = especie.tamaño as string | undefined
-  const velocidad = especie.velocidad as number | undefined
-  const rasgos = especie.rasgos as Rasgo[] | undefined
-  return { tamaño, velocidad, rasgos: rasgos?.map((r) => r.nombre) ?? [] }
-}
-
-function getClaseInfo(detalle: ItemDetalle | null) {
-  if (!detalle?.datos) return null
-  const d = detalle.datos as AnyObj
-  const clase = (d.clase ?? d) as AnyObj
-  const vida = clase.vida as AnyObj | undefined
-  const dado = vida?.dado as string | undefined
-  const nivel1 = vida?.nivel_1 as number | undefined
-  const competencias = clase.competencias as AnyObj | undefined
-  const salvaciones = competencias?.salvaciones as string[] | undefined
-  const rasgos = clase.rasgos as Record<string, Rasgo[]> | undefined
-  const rasgosN1 = rasgos?.['1']?.map((r) => r.nombre) ?? []
-  return { dado, nivel1, salvaciones, rasgosN1 }
-}
-
-function getTrasfondoInfo(detalle: ItemDetalle | null) {
-  if (!detalle?.datos) return null
-  const d = detalle.datos as AnyObj
-  const trasfondo = (d.trasfondo ?? d) as AnyObj
-  const caracteristicas = trasfondo.mejora_caracteristicas as string[] | undefined
-  const habilidades = trasfondo.competencias_habilidad as string[] | undefined
-  const herramientas = trasfondo.competencias_herramienta as string[] | undefined
-  const dote = trasfondo.dote as string | undefined
-  return { caracteristicas, habilidades, herramientas, dote }
 }
 
 // ── Bloque de info compacto ────────────────────────────────────────────────

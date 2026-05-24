@@ -252,7 +252,13 @@ export default function CharacterPage() {
 
             {/* Right: tabs */}
             <div className="flex-1 overflow-hidden p-4 flex flex-col">
-              <RightPanel draft={draft} onChange={handleChange} />
+              <RightPanel
+                draft={draft}
+                onChange={handleChange}
+                razaDetalle={razaDetalle}
+                claseDetalle={claseDetalle}
+                trasfondoDetalle={trasfondoDetalle}
+              />
             </div>
 
           </div>
