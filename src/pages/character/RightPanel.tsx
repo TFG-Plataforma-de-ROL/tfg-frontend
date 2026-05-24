@@ -155,6 +155,43 @@ function DefenseTab({ draft, onChange, claseDetalle }: BaseProps & { claseDetall
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Competencias de armaduras */}
+      {claseProfArmaduras.length > 0 && (
+        <div className="flex items-center gap-2 p-2.5 rounded-md bg-secondary/40 border border-border/30">
+          <span className="text-xs">Competencias de armaduras:</span>
+          <div className="flex flex-wrap gap-1">
+            {claseProfArmaduras.map((categoria) => (
+              <span key={categoria} className="text-[10px] bg-primary/20 text-primary px-2 py-1 rounded">
+                {categoria}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+      {/* Escudo */}
+      <div className="flex items-center justify-between p-2.5 rounded-md bg-secondary/40 border border-border/30">
+        <div className="flex items-center gap-2">
+          <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-xs">Escudo (+2 CA)</span>
+          {tieneCompetenciaEscudo(claseProfArmaduras) && (
+            <span className="w-3.5 h-3.5 rounded-full bg-green-600/20 flex items-center justify-center" title="Competente con escudos">
+              <span className="text-green-400 text-[8px] font-bold">C</span>
+            </span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={handleToggleEscudo}
+          className={`w-10 h-6 rounded-full transition-colors relative shrink-0 ${
+            escudo ? 'bg-primary' : 'bg-secondary border border-border/60'
+          }`}
+        >
+          <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ${
+            escudo ? 'left-5' : 'left-1'
+          }`} />
+        </button>
+      </div>
+
       {/* Armadura equipada */}
       <div>
         <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1.5">Armadura</p>
@@ -197,30 +234,6 @@ function DefenseTab({ draft, onChange, claseDetalle }: BaseProps & { claseDetall
             <span className="text-xs">Sin armadura — pulsa para equipar</span>
           </button>
         )}
-      </div>
-
-      {/* Escudo */}
-      <div className="flex items-center justify-between p-2.5 rounded-md bg-secondary/40 border border-border/30">
-        <div className="flex items-center gap-2">
-          <Shield className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-xs">Escudo (+2 CA)</span>
-          {tieneCompetenciaEscudo(claseProfArmaduras) && (
-            <span className="w-3.5 h-3.5 rounded-full bg-green-600/20 flex items-center justify-center" title="Competente con escudos">
-              <span className="text-green-400 text-[8px] font-bold">C</span>
-            </span>
-          )}
-        </div>
-        <button
-          type="button"
-          onClick={handleToggleEscudo}
-          className={`w-10 h-6 rounded-full transition-colors relative shrink-0 overflow-hidden ${
-            escudo ? 'bg-primary' : 'bg-secondary border border-border/60'
-          }`}
-        >
-          <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${
-            escudo ? 'translate-x-5' : 'translate-x-1'
-          }`} />
-        </button>
       </div>
 
       <ArmorPickerDialog

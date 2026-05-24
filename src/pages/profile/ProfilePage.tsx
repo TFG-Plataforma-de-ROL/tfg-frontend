@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Pencil, Camera } from 'lucide-react'
+import { Pencil, Camera, Trash2 } from 'lucide-react'
 import { useAuth } from '@/hooks'
 import { usuarioService } from '@/services/usuarioService'
+import { personajeService } from '@/services/personajeService'
 import { formatDate, validateEmail } from '@/utils/helpers'
 import { ROUTES } from '@/config/routes'
 import { Button } from '@/components/ui/button'
@@ -47,6 +48,8 @@ export default function ProfilePage() {
 
   const [avatarLoading, setAvatarLoading] = useState(false)
   const [avatarMsg, setAvatarMsg] = useState<Msg | null>(null)
+
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
   const [nuevoNombre, setNuevoNombre] = useState('')
   const [nombreLoading, setNombreLoading] = useState(false)
@@ -119,6 +122,17 @@ export default function ProfilePage() {
       setEmailMsg({ tipo: 'err', texto: e.response?.data?.error ?? 'Error al actualizar' })
     } finally {
       setEmailLoading(false)
+    }
+  }
+
+  const handleDeletePersonaje = async (id: number, nombre: string) => {
+    if (!window.confirm(`¿Eliminar el personaje "${nombre}"? Esta acción no se puede deshacer.`)) return
+    setDeletingId(id)
+    try {
+      await personajeService.deletePersonaje(id)
+      setPerfil((p) => p ? { ...p, personajes: p.personajes.filter((pj) => pj.id_personaje !== id) } : p)
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -265,15 +279,24 @@ export default function ProfilePage() {
             Object.entries(personajesPorSistema).map(([sistema, pjs]) => (
               <div key={sistema} className="flex flex-col gap-2">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">{sistema}</p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-col gap-1">
                   {pjs.map((p) => (
-                    <button
-                      key={p.id_personaje}
-                      onClick={() => navigate(ROUTES.PRIVATE.PERSONAJE_EDITAR.replace(':id', String(p.id_personaje)))}
-                      className="px-3 py-1.5 rounded-md border border-border bg-secondary text-sm font-medium hover:border-primary/60 hover:bg-secondary/80 transition-all"
-                    >
-                      {p.nombre}
-                    </button>
+                    <div key={p.id_personaje} className="flex items-center justify-between">
+                      <button
+                        onClick={() => navigate(ROUTES.PRIVATE.PERSONAJE_EDITAR.replace(':id', String(p.id_personaje)))}
+                        className="px-3 py-1.5 rounded-md border border-border bg-secondary text-sm font-medium hover:border-primary/60 hover:bg-secondary/80 transition-all"
+                      >
+                        {p.nombre}
+                      </button>
+                      <button
+                        onClick={() => handleDeletePersonaje(p.id_personaje, p.nombre)}
+                        disabled={deletingId === p.id_personaje}
+                        title="Eliminar personaje"
+                        className="p-1.5 rounded-md border border-border bg-secondary text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/40 transition-all disabled:opacity-50"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>

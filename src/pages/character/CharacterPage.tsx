@@ -8,6 +8,7 @@ import { fichaService, draftToCampos, fichaToCharacterDraft } from '@/services/f
 import { itemService } from '@/services/itemService'
 import type { Item, ItemDetalle } from '@/services/itemService'
 import type { CharacterDraft } from '@/types/character'
+import { calcularCA, ARMADURAS } from '@/data/armadurasData'
 import LeftPanel from './LeftPanel'
 import CenterPanel from './CenterPanel'
 import RightPanel from './RightPanel'
@@ -118,7 +119,15 @@ export default function CharacterPage() {
   }, [draft.id_trasfondo])
 
   const handleChange = useCallback((partial: Partial<CharacterDraft>) => {
-    setDraft((prev) => ({ ...prev, ...partial }))
+    setDraft((prev) => {
+      const next = { ...prev, ...partial }
+      if (partial.stats !== undefined) {
+        const armadura = ARMADURAS.find(a => a.id === next.armadura_equipada) ?? null
+        const ca = calcularCA(armadura, next.escudo_equipado, next.stats.des)
+        return { ...next, combate: { ...next.combate, ca } }
+      }
+      return next
+    })
     setSaveMsg(null)
   }, [])
 
