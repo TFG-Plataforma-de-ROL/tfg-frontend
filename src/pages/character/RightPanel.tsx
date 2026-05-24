@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { CharacterDraft, WeaponEntry, EquipmentEntry, SpellEntry, FeatEntry } from '@/types/character'
+import type { CharacterDraft, WeaponEntry, EquipmentEntry, SpellEntry, FeatEntry, Monedas } from '@/types/character'
 import type { ItemDetalle } from '@/services/itemService'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
@@ -13,7 +13,7 @@ import WeaponPickerDialog from './WeaponPickerDialog'
 import ArmorPickerDialog from './ArmorPickerDialog'
 import { tieneCompetencia, type ArmaBase, type CategoriaArma } from '@/data/armasData'
 import {
-  ARMADURAS, calcularCA, formulaCA, labelCategoriaArmadura,
+  ARMADURAS, calcularCA, formulaCA,
   tieneCompetenciaArmadura, tieneCompetenciaEscudo,
 } from '@/data/armadurasData'
 
@@ -139,8 +139,6 @@ function DefenseTab({ draft, onChange, claseDetalle }: BaseProps & { claseDetall
   const armaduraEquipada = ARMADURAS.find(a => a.id === draft.armadura_equipada) ?? null
   const escudo = draft.escudo_equipado
 
-  const caCalculada = calcularCA(armaduraEquipada, escudo, draft.stats.des)
-
   const handleEquipArmadura = (id: string | null) => {
     const armadura = id ? ARMADURAS.find(a => a.id === id) ?? null : null
     const nuevaCA = calcularCA(armadura, escudo, draft.stats.des)
@@ -249,33 +247,83 @@ function DefenseTab({ draft, onChange, claseDetalle }: BaseProps & { claseDetall
 
 // ── Equipo ─────────────────────────────────────────────────────────────────
 
+const MONEDAS_CONFIG: { key: keyof Monedas; label: string; coinClass: string }[] = [
+  { key: 'platino', label: 'Platino', coinClass: 'bg-gray-100 border border-gray-300 shadow-inner' },
+  { key: 'oro',     label: 'Oro',     coinClass: 'bg-yellow-400 shadow-inner' },
+  { key: 'plata',   label: 'Plata',   coinClass: 'bg-slate-300 border border-slate-400 shadow-inner' },
+  { key: 'cobre',   label: 'Cobre',   coinClass: 'bg-amber-700 shadow-inner' },
+]
+
 function EquipmentTab({ draft, onChange }: BaseProps) {
-  const add = () => {
-    const entry: EquipmentEntry = { id: crypto.randomUUID(), nombre: '', cantidad: 1 }
-    onChange({ equipo: [...draft.equipo, entry] })
-  }
+  const monedas = draft.monedas
+  const updateMonedas = (partial: Partial<Monedas>) =>
+    onChange({ monedas: { ...monedas, ...partial } })
+
+  const fueModificador = Math.floor((draft.stats.fue - 10) / 2)
+  const bulkTotal = draft.equipo.reduce((sum, e) => sum + (e.carga ?? 0) * e.cantidad, 0)
+  const encLimit = 5 + fueModificador
+  const maxLimit = 10 + fueModificador
+  const status = bulkTotal <= encLimit ? 'Sin carga' : bulkTotal <= maxLimit ? 'Cargado' : 'Sobrecargado'
+
+  const addItem = () =>
+    onChange({ equipo: [...draft.equipo, { id: crypto.randomUUID(), nombre: '', cantidad: 1 }] })
   const update = (id: string, partial: Partial<EquipmentEntry>) =>
     onChange({ equipo: draft.equipo.map((e) => e.id === id ? { ...e, ...partial } : e) })
   const remove = (id: string) =>
     onChange({ equipo: draft.equipo.filter((e) => e.id !== id) })
 
   return (
-    <div className="flex flex-col gap-2">
-      {draft.equipo.map((e) => (
-        <div key={e.id} className="flex gap-1 items-center">
-          <Input value={e.nombre} onChange={(ev) => update(e.id, { nombre: ev.target.value })}
-            placeholder="Mochila..." className="h-7 text-xs bg-secondary border-border/60 flex-1" />
-          <input type="number" value={e.cantidad} min={1}
-            onChange={(ev) => update(e.id, { cantidad: Number(ev.target.value) })}
-            className="w-14 h-7 bg-secondary border border-border/60 rounded-md text-center text-xs focus:outline-none focus:ring-1 focus:ring-ring [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-          <button type="button" onClick={() => remove(e.id)} className="text-destructive hover:text-destructive/80 p-1">
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      ))}
-      <Button type="button" variant="outline" size="sm" onClick={add} className="mt-1 border-dashed border-border/60 text-xs h-7">
-        <Plus className="h-3 w-3 mr-1" /> Añadir objeto
+    <div className="flex flex-col gap-3">
+      {/* Monedas */}
+      <div className="grid grid-cols-4 gap-1.5">
+        {MONEDAS_CONFIG.map(({ key, label, coinClass }) => (
+          <div key={key} className="flex items-center gap-1.5 p-2 rounded-md bg-secondary/40 border border-border/40">
+            <div className={`w-7 h-7 rounded-full shrink-0 ${coinClass}`} />
+            <div className="flex flex-col flex-1 min-w-0">
+              <span className="text-[10px] text-muted-foreground leading-none mb-0.5">{label}</span>
+              <input
+                type="number"
+                value={monedas[key]}
+                min={0}
+                onChange={(e) => updateMonedas({ [key]: Math.max(0, Number(e.target.value)) })}
+                className="w-full bg-transparent border-0 text-xs font-semibold p-0 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Carga */}
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground px-0.5">
+        <span>Carga total <span className="text-foreground font-semibold">{bulkTotal}</span></span>
+        <span>{status} (Enc: {encLimit}; Máx: {maxLimit})</span>
+      </div>
+
+      {/* Botones de acción */}
+      <Button type="button" variant="outline" size="sm" onClick={addItem}
+        className="text-[11px] h-7 border-border/60">
+        <Plus className="h-3 w-3 mr-1" /> Añadir Equipo
       </Button>
+
+      {/* Inventario Principal */}
+      <div className="flex flex-col gap-1.5">
+        <span className="text-sm font-semibold text-primary">Inventario Principal</span>
+        {draft.equipo.map((e) => (
+          <div key={e.id} className="flex gap-1 items-center">
+            <Input value={e.nombre} onChange={(ev) => update(e.id, { nombre: ev.target.value })}
+              placeholder="Mochila..." className="h-7 text-xs bg-secondary border-border/60 flex-1" />
+            <input type="number" value={e.cantidad} min={1}
+              onChange={(ev) => update(e.id, { cantidad: Number(ev.target.value) })}
+              className="w-12 h-7 bg-secondary border border-border/60 rounded-md text-center text-xs focus:outline-none focus:ring-1 focus:ring-ring [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+            <button type="button" onClick={() => remove(e.id)} className="text-destructive hover:text-destructive/80 p-1">
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ))}
+        {draft.equipo.length === 0 && (
+          <p className="text-xs text-muted-foreground text-center py-3">Sin objetos en el inventario</p>
+        )}
+      </div>
     </div>
   )
 }

@@ -57,6 +57,14 @@ export interface EquipmentEntry {
   id: string
   nombre: string
   cantidad: number
+  carga?: number
+}
+
+export interface Monedas {
+  platino: number
+  oro: number
+  plata: number
+  cobre: number
 }
 
 export interface SpellEntry {
@@ -119,6 +127,7 @@ export interface CharacterDraft {
   // Tabs
   armas: WeaponEntry[]
   equipo: EquipmentEntry[]
+  monedas: Monedas
   conjuros: SpellEntry[]
   rasgos: FeatEntry[]
   detalles: CharacterDetalles

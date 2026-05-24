@@ -38,6 +38,7 @@ const DEFAULT_DRAFT: CharacterDraft = {
   escudo_equipado: false,
   armas: [],
   equipo: [],
+  monedas: { platino: 0, oro: 0, plata: 0, cobre: 0 },
   conjuros: [],
   rasgos: [],
   detalles: {
