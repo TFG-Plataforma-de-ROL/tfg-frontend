@@ -220,17 +220,12 @@ export default function TopBar({ draft, claseDetalle, onChange }: Props) {
                 Salvaciones · Prof +{prof}
               </span>
               <div className="flex gap-4">
-                {STAT_KEYS.map((k) => {
-                  const isProficient = profSaves.has(k)
-                  const mod = getMod(stats[k]) + (isProficient ? prof : 0)
+                {STAT_KEYS.filter((k) => profSaves.has(k)).map((k) => {
+                  const mod = getMod(stats[k]) + prof
                   return (
                     <div key={k} className="flex items-center gap-1 text-xs">
-                      <div className={`w-3 h-3 rounded-full border-2 shrink-0 ${
-                        isProficient ? 'bg-primary border-primary' : 'border-muted-foreground/40 bg-transparent'
-                      }`} />
-                      <span className={`font-bold ${isProficient ? 'text-primary' : 'text-muted-foreground'}`}>
-                        {formatMod(mod)}
-                      </span>
+                      <div className="w-3 h-3 rounded-full border-2 shrink-0 bg-primary border-primary" />
+                      <span className="font-bold text-primary">{formatMod(mod)}</span>
                       <span className="text-muted-foreground text-[10px]">{STAT_NAMES[k]}</span>
                     </div>
                   )
