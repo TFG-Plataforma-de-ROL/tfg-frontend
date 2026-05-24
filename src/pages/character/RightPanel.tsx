@@ -6,12 +6,16 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, ChevronDown } from 'lucide-react'
 import { getRazaInfo, getClaseInfo, getTrasfondoInfo } from '@/utils/characterDetails'
+import type { RasgoConDesc } from '@/utils/characterDetails'
 
-interface Props {
+interface BaseProps {
   draft: CharacterDraft
   onChange: (partial: Partial<CharacterDraft>) => void
+}
+
+interface Props extends BaseProps {
   razaDetalle: ItemDetalle | null
   claseDetalle: ItemDetalle | null
   trasfondoDetalle: ItemDetalle | null
@@ -19,7 +23,7 @@ interface Props {
 
 // ── Armas ──────────────────────────────────────────────────────────────────
 
-function WeaponsTab({ draft, onChange }: Props) {
+function WeaponsTab({ draft, onChange }: BaseProps) {
   const add = () => {
     const entry: WeaponEntry = { id: crypto.randomUUID(), nombre: '', bonus_ataque: 0, dano: '1d6', tipo_dano: 'cortante' }
     onChange({ armas: [...draft.armas, entry] })
@@ -57,7 +61,7 @@ function WeaponsTab({ draft, onChange }: Props) {
 
 // ── Defensa ────────────────────────────────────────────────────────────────
 
-function DefenseTab({ draft }: Pick<Props, 'draft'>) {
+function DefenseTab({ draft }: Pick<BaseProps, 'draft'>) {
   return (
     <div className="text-xs text-muted-foreground flex flex-col gap-1">
       <p>CA actual: <span className="font-bold text-foreground">{draft.combate.ca}</span></p>
@@ -69,7 +73,7 @@ function DefenseTab({ draft }: Pick<Props, 'draft'>) {
 
 // ── Equipo ─────────────────────────────────────────────────────────────────
 
-function EquipmentTab({ draft, onChange }: Props) {
+function EquipmentTab({ draft, onChange }: BaseProps) {
   const add = () => {
     const entry: EquipmentEntry = { id: crypto.randomUUID(), nombre: '', cantidad: 1 }
     onChange({ equipo: [...draft.equipo, entry] })
@@ -102,7 +106,7 @@ function EquipmentTab({ draft, onChange }: Props) {
 
 // ── Conjuros ───────────────────────────────────────────────────────────────
 
-function SpellsTab({ draft, onChange }: Props) {
+function SpellsTab({ draft, onChange }: BaseProps) {
   const add = () => {
     const entry: SpellEntry = { id: crypto.randomUUID(), nombre: '', nivel: 0, escuela: '', descripcion: '' }
     onChange({ conjuros: [...draft.conjuros, entry] })
@@ -139,15 +143,30 @@ function SpellsTab({ draft, onChange }: Props) {
 
 // ── Rasgos / Dotes ─────────────────────────────────────────────────────────
 
-function FeatSection({ title, items }: { title: string; items: string[] }) {
+function FeatSection({ title, items }: { title: string; items: RasgoConDesc[] }) {
+  const [expanded, setExpanded] = useState<string | null>(null)
   if (items.length === 0) return null
   return (
     <div className="flex flex-col gap-0.5">
       <span className="text-[11px] font-semibold text-primary uppercase tracking-wide mb-1">{title}</span>
       {items.map((item) => (
-        <div key={item} className="flex items-center gap-1.5 py-0.5 pl-1">
-          <span className="w-1 h-1 rounded-full bg-muted-foreground/40 shrink-0" />
-          <span className="text-xs text-foreground">{item}</span>
+        <div key={item.nombre}>
+          <button
+            type="button"
+            onClick={() => item.descripcion && setExpanded(expanded === item.nombre ? null : item.nombre)}
+            className={`flex items-center gap-1.5 py-0.5 pl-1 w-full text-left transition-colors ${item.descripcion ? 'hover:text-primary cursor-pointer' : 'cursor-default'}`}
+          >
+            <span className="w-1 h-1 rounded-full bg-muted-foreground/40 shrink-0" />
+            <span className="text-xs text-foreground">{item.nombre}</span>
+            {item.descripcion && (
+              <ChevronDown className={`h-3 w-3 ml-auto text-muted-foreground/60 shrink-0 transition-transform ${expanded === item.nombre ? 'rotate-180' : ''}`} />
+            )}
+          </button>
+          {expanded === item.nombre && item.descripcion && (
+            <p className="text-[11px] text-muted-foreground leading-snug pl-4 pr-1 pb-1">
+              {item.descripcion}
+            </p>
+          )}
         </div>
       ))}
     </div>
@@ -159,7 +178,7 @@ function FeatsTab({ draft, onChange, razaDetalle, claseDetalle, trasfondoDetalle
   const claseInfo = getClaseInfo(claseDetalle)
   const trasfondoInfo = getTrasfondoInfo(trasfondoDetalle)
 
-  const trasfondoFeats = trasfondoInfo?.dote ? [trasfondoInfo.dote] : []
+  const trasfondoFeats: RasgoConDesc[] = trasfondoInfo?.dote ? [trasfondoInfo.dote] : []
   const claseFeats = claseInfo?.rasgosN1 ?? []
   const razaFeats = razaInfo?.rasgos ?? []
   const hasAutoFeats = claseFeats.length > 0 || trasfondoFeats.length > 0 || razaFeats.length > 0
@@ -209,7 +228,7 @@ function FeatsTab({ draft, onChange, razaDetalle, claseDetalle, trasfondoDetalle
 
 // ── Detalles ───────────────────────────────────────────────────────────────
 
-function DetailsTab({ draft, onChange }: Props) {
+function DetailsTab({ draft, onChange }: BaseProps) {
   const det = draft.detalles
   const update = (key: keyof typeof det, value: string) =>
     onChange({ detalles: { ...det, [key]: value } })

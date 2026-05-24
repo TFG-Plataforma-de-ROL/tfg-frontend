@@ -156,7 +156,7 @@ export default function LeftPanel({ draft, razas, clases, trasfondos, razaDetall
                 value={[razaInfo.tamaño, razaInfo.velocidad ? `${razaInfo.velocidad} pies` : ''].filter(Boolean).join(' · ')}
               />
             )}
-            {razaInfo.rasgos.length > 0 && <TagList items={razaInfo.rasgos} />}
+            {razaInfo.rasgos.length > 0 && <TagList items={razaInfo.rasgos.map(r => r.nombre)} />}
           </div>
         )}
       </SelectionCard>
@@ -178,7 +178,7 @@ export default function LeftPanel({ draft, razas, clases, trasfondos, razaDetall
             {claseInfo.salvaciones && claseInfo.salvaciones.length > 0 && (
               <InfoRow label="Salv" value={claseInfo.salvaciones.join(', ')} />
             )}
-            {claseInfo.rasgosN1.length > 0 && <TagList items={claseInfo.rasgosN1} />}
+            {claseInfo.rasgosN1.length > 0 && <TagList items={claseInfo.rasgosN1.map(r => r.nombre)} />}
           </div>
         )}
       </SelectionCard>
@@ -200,7 +200,7 @@ export default function LeftPanel({ draft, razas, clases, trasfondos, razaDetall
             {trasfondoInfo.herramientas && trasfondoInfo.herramientas.length > 0 && (
               <InfoRow label="Tool" value={trasfondoInfo.herramientas.join(', ')} />
             )}
-            {trasfondoInfo.dote && <InfoRow label="Dote" value={trasfondoInfo.dote} />}
+            {trasfondoInfo.dote && <InfoRow label="Dote" value={trasfondoInfo.dote.nombre} />}
           </div>
         )}
       </SelectionCard>

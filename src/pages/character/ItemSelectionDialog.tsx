@@ -37,7 +37,7 @@ interface DatosTrasfondo {
     competencias_habilidad: string[]
     competencias_herramienta: string[]
     equipo: string[]
-    dote: string
+    dote: string | { nombre: string; descripcion?: string }
   }
 }
 
@@ -128,7 +128,15 @@ function DetailTrasfondo({ datos }: { datos: DatosTrasfondo }) {
         </ul>
       </Section>
       <Section title="Don">
-        <p className="text-sm">{t.dote}</p>
+        {typeof t.dote === 'string'
+          ? <p className="text-sm">{t.dote}</p>
+          : (
+            <>
+              <p className="text-sm font-semibold">{t.dote.nombre}</p>
+              {t.dote.descripcion && <p className="text-sm text-muted-foreground">{t.dote.descripcion}</p>}
+            </>
+          )
+        }
       </Section>
     </>
   )
