@@ -33,6 +33,7 @@ interface DatosClase {
 interface DatosTrasfondo {
   trasfondo: {
     nombre: string
+    mejora_caracteristicas: string[]
     competencias_habilidad: string[]
     competencias_herramienta: string[]
     equipo: string[]
@@ -110,6 +111,9 @@ function DetailTrasfondo({ datos }: { datos: DatosTrasfondo }) {
   const t = datos.trasfondo
   return (
     <>
+      <Section title="Mejora de características">
+        <p className="text-sm">{t.mejora_caracteristicas.join(', ')}</p>
+      </Section>
       <Section title="Competencias en habilidades">
         <p className="text-sm">{t.competencias_habilidad.join(', ')}</p>
       </Section>

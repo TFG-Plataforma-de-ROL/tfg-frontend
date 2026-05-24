@@ -1,5 +1,5 @@
 import { User, Sword, BookOpen, ChevronRight } from 'lucide-react'
-import type { Item } from '@/services/itemService'
+import type { Item, ItemDetalle } from '@/services/itemService'
 import type { CharacterDraft } from '@/types/character'
 
 interface Props {
@@ -7,6 +7,9 @@ interface Props {
   razas: Item[]
   clases: Item[]
   trasfondos: Item[]
+  razaDetalle: ItemDetalle | null
+  claseDetalle: ItemDetalle | null
+  trasfondoDetalle: ItemDetalle | null
   onChange: (partial: Partial<CharacterDraft>) => void
   onOpenDialog: (type: 'raza' | 'clase' | 'trasfondo') => void
 }
@@ -43,14 +46,14 @@ function SelectionCard({ icon: Icon, label, selected, onClick, children }: CardP
   )
 }
 
-// ── Helpers para extraer datos de todos_datos ──────────────────────────────
+// ── Helpers para extraer datos del campo `datos` del ItemDetalle ───────────
 
 interface Rasgo { nombre: string }
 type AnyObj = Record<string, unknown>
 
-function getRazaInfo(item: Item | undefined) {
-  if (!item?.todos_datos) return null
-  const d = item.todos_datos as AnyObj
+function getRazaInfo(detalle: ItemDetalle | null) {
+  if (!detalle?.datos) return null
+  const d = detalle.datos as AnyObj
   const especie = (d.especie ?? d) as AnyObj
   const tamaño = especie.tamaño as string | undefined
   const velocidad = especie.velocidad as number | undefined
@@ -58,9 +61,9 @@ function getRazaInfo(item: Item | undefined) {
   return { tamaño, velocidad, rasgos: rasgos?.map((r) => r.nombre) ?? [] }
 }
 
-function getClaseInfo(item: Item | undefined) {
-  if (!item?.todos_datos) return null
-  const d = item.todos_datos as AnyObj
+function getClaseInfo(detalle: ItemDetalle | null) {
+  if (!detalle?.datos) return null
+  const d = detalle.datos as AnyObj
   const clase = (d.clase ?? d) as AnyObj
   const vida = clase.vida as AnyObj | undefined
   const dado = vida?.dado as string | undefined
@@ -72,14 +75,15 @@ function getClaseInfo(item: Item | undefined) {
   return { dado, nivel1, salvaciones, rasgosN1 }
 }
 
-function getTrasfondoInfo(item: Item | undefined) {
-  if (!item?.todos_datos) return null
-  const d = item.todos_datos as AnyObj
+function getTrasfondoInfo(detalle: ItemDetalle | null) {
+  if (!detalle?.datos) return null
+  const d = detalle.datos as AnyObj
   const trasfondo = (d.trasfondo ?? d) as AnyObj
+  const caracteristicas = trasfondo.mejora_caracteristicas as string[] | undefined
   const habilidades = trasfondo.competencias_habilidad as string[] | undefined
   const herramientas = trasfondo.competencias_herramienta as string[] | undefined
   const dote = trasfondo.dote as string | undefined
-  return { habilidades, herramientas, dote }
+  return { caracteristicas, habilidades, herramientas, dote }
 }
 
 // ── Bloque de info compacto ────────────────────────────────────────────────
@@ -108,16 +112,16 @@ function TagList({ items }: { items: string[] }) {
 
 // ── Panel principal ────────────────────────────────────────────────────────
 
-export default function LeftPanel({ draft, razas, clases, trasfondos, onOpenDialog }: Props) {
+export default function LeftPanel({ draft, razas, clases, trasfondos, razaDetalle, claseDetalle, trasfondoDetalle, onOpenDialog }: Props) {
   const prof = Math.ceil(draft.nivel / 4) + 1
 
   const razaItem = razas.find((r) => r.id_item === draft.id_raza)
   const claseItem = clases.find((c) => c.id_item === draft.id_clase)
   const trasfondoItem = trasfondos.find((t) => t.id_item === draft.id_trasfondo)
 
-  const razaInfo = getRazaInfo(razaItem)
-  const claseInfo = getClaseInfo(claseItem)
-  const trasfondoInfo = getTrasfondoInfo(trasfondoItem)
+  const razaInfo = getRazaInfo(razaDetalle)
+  const claseInfo = getClaseInfo(claseDetalle)
+  const trasfondoInfo = getTrasfondoInfo(trasfondoDetalle)
 
   return (
     <div className="flex flex-col gap-3 p-3 h-full">
@@ -170,6 +174,9 @@ export default function LeftPanel({ draft, razas, clases, trasfondos, onOpenDial
       >
         {trasfondoInfo && (
           <div className="px-1 flex flex-col gap-1.5">
+            {trasfondoInfo.caracteristicas && trasfondoInfo.caracteristicas.length > 0 && (
+              <InfoRow label="Mejora" value={trasfondoInfo.caracteristicas.join(', ')} />
+            )}
             {trasfondoInfo.habilidades && trasfondoInfo.habilidades.length > 0 && (
               <InfoRow label="Hab" value={trasfondoInfo.habilidades.join(', ')} />
             )}
@@ -189,4 +196,5 @@ export default function LeftPanel({ draft, razas, clases, trasfondos, onOpenDial
       </div>
     </div>
   )
+  
 }

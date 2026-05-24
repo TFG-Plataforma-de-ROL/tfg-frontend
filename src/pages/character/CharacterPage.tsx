@@ -219,6 +219,9 @@ export default function CharacterPage() {
             razas={razas}
             clases={clases}
             trasfondos={trasfondos}
+            razaDetalle={razaDetalle}
+            claseDetalle={claseDetalle}
+            trasfondoDetalle={trasfondoDetalle}
             onChange={handleChange}
             onOpenDialog={setDialogOpen}
           />
