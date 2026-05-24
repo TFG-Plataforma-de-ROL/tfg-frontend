@@ -11,7 +11,7 @@ import { getRazaInfo, getClaseInfo, getTrasfondoInfo } from '@/utils/characterDe
 import type { RasgoConDesc } from '@/utils/characterDetails'
 import WeaponPickerDialog from './WeaponPickerDialog'
 import ArmorPickerDialog from './ArmorPickerDialog'
-import { tieneCompetencia, type ArmaBase, type CategoriaArma } from '@/data/armasData'
+import { ARMAS, tieneCompetencia, type ArmaBase, type CategoriaArma } from '@/data/armasData'
 import {
   ARMADURAS, calcularCA, formulaCA,
   tieneCompetenciaArmadura, tieneCompetenciaEscudo,
@@ -29,6 +29,23 @@ interface Props extends BaseProps {
 }
 
 // ── Armas ──────────────────────────────────────────────────────────────────
+
+function calcProfBonus(nivel: number): number {
+  return Math.ceil(nivel / 4) + 1
+}
+
+function calcStatMod(w: WeaponEntry, stats: CharacterDraft['stats']): number {
+  const fueMod = Math.floor((stats.fue - 10) / 2)
+  const desMod = Math.floor((stats.des - 10) / 2)
+  const props = w.propiedades ?? ARMAS.find(a => a.nombre === w.nombre)?.propiedades ?? []
+  const tieneFinura = props.some(p => /finura/i.test(p))
+  const esRango = (w.categoria ?? '').includes('rango')
+  return tieneFinura ? Math.max(fueMod, desMod) : esRango ? desMod : fueMod
+}
+
+function calcImpactar(w: WeaponEntry, draft: CharacterDraft, comp: boolean): number {
+  return calcStatMod(w, draft.stats) + (comp ? calcProfBonus(draft.nivel) : 0)
+}
 
 function WeaponsTab({ draft, onChange, claseDetalle }: BaseProps & { claseDetalle: ItemDetalle | null }) {
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -52,6 +69,7 @@ function WeaponsTab({ draft, onChange, claseDetalle }: BaseProps & { claseDetall
       dano: arma.dano,
       tipo_dano: arma.tipo_dano,
       categoria: arma.categoria,
+      propiedades: arma.propiedades,
     }
     onChange({ armas: [...draft.armas, entry] })
   }
@@ -60,21 +78,26 @@ function WeaponsTab({ draft, onChange, claseDetalle }: BaseProps & { claseDetall
     <div className="flex flex-col gap-2">
       {draft.armas.length > 0 && (
         <>
-          <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-1 text-[10px] uppercase tracking-wide text-muted-foreground px-1">
-            <span className="w-5" />
+          <div className="grid grid-cols-[20px_1fr_44px_76px_72px_1fr_24px] gap-1 text-[10px] uppercase tracking-wide text-muted-foreground px-1">
+            <span />
             <span>Nombre</span>
-            <span className="w-12 text-center">Bon.</span>
-            <span className="w-16 text-center">Daño</span>
-            <span className="w-6" />
+            <span className="text-center">Impactar</span>
+            <span className="text-center">Daño</span>
+            <span className="text-center">Tipo</span>
+            <span>Propiedades</span>
+            <span />
           </div>
 
           {draft.armas.map((w) => {
             const comp = w.categoria
               ? tieneCompetencia(w.categoria as CategoriaArma, claseProficiencias)
               : false
+            const impactar = calcImpactar(w, draft, comp)
+            const statMod = calcStatMod(w, draft.stats)
+            const props = w.propiedades ?? ARMAS.find(a => a.nombre === w.nombre)?.propiedades ?? []
             return (
-              <div key={w.id} className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-1 items-center">
-                <div className="w-5 flex items-center justify-center">
+              <div key={w.id} className="grid grid-cols-[20px_1fr_44px_76px_72px_1fr_24px] gap-1 items-center">
+                <div className="flex items-center justify-center">
                   {comp
                     ? <span className="w-4 h-4 rounded-full bg-green-600/20 flex items-center justify-center" title="Competente">
                         <span className="text-green-400 text-[9px] font-bold">C</span>
@@ -86,12 +109,19 @@ function WeaponsTab({ draft, onChange, claseDetalle }: BaseProps & { claseDetall
                 </div>
                 <Input value={w.nombre} onChange={(e) => update(w.id, { nombre: e.target.value })}
                   placeholder="Espada larga" className="h-7 text-xs bg-secondary border-border/60" />
-                <input type="number" value={w.bonus_ataque}
-                  onChange={(e) => update(w.id, { bonus_ataque: Number(e.target.value) })}
-                  className="w-12 h-7 bg-secondary border border-border/60 rounded-md text-center text-xs focus:outline-none focus:ring-1 focus:ring-ring [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-                <Input value={w.dano} onChange={(e) => update(w.id, { dano: e.target.value })}
-                  placeholder="1d8" className="w-16 h-7 text-xs bg-secondary border-border/60 text-center" />
-                <button type="button" onClick={() => remove(w.id)} className="w-6 text-destructive hover:text-destructive/80 flex items-center justify-center">
+                <div className="h-7 bg-secondary/60 border border-border/40 rounded-md flex items-center justify-center text-xs font-semibold tabular-nums">
+                  {impactar >= 0 ? `+${impactar}` : `${impactar}`}
+                </div>
+                <div className="h-7 bg-secondary/60 border border-border/40 rounded-md flex items-center justify-center text-xs font-semibold tabular-nums">
+                  {w.dano}{statMod >= 0 ? `+${statMod}` : statMod}
+                </div>
+                <div className="h-7 flex items-center justify-center text-[11px] text-muted-foreground truncate px-1" title={w.tipo_dano}>
+                  {w.tipo_dano ? w.tipo_dano.charAt(0).toUpperCase() + w.tipo_dano.slice(1) : '—'}
+                </div>
+                <div className="text-[10px] text-muted-foreground truncate leading-none" title={props.join(', ')}>
+                  {props.length > 0 ? props.join(', ') : '—'}
+                </div>
+                <button type="button" onClick={() => remove(w.id)} className="text-destructive hover:text-destructive/80 flex items-center justify-center">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>

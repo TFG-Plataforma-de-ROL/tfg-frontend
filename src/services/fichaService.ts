@@ -50,9 +50,10 @@ export function draftToCampos(
     { nombre_campo: 'salvaciones', valor: draft.salvaciones },
     { nombre_campo: 'habilidades', valor: draft.habilidades },
     { nombre_campo: 'inspiracion', valor: { puntos: draft.inspiracion } },
-    { nombre_campo: 'armas',       valor: draft.armas },
-    { nombre_campo: 'equipo',      valor: draft.equipo },
-    { nombre_campo: 'monedas',     valor: draft.monedas },
+    { nombre_campo: 'armas',          valor: draft.armas },
+    { nombre_campo: 'equipo',         valor: draft.equipo },
+    { nombre_campo: 'equipo_inicial', valor: draft.equipo_inicial },
+    { nombre_campo: 'monedas',        valor: draft.monedas },
     { nombre_campo: 'conjuros',    valor: draft.conjuros },
     { nombre_campo: 'rasgos',      valor: draft.rasgos },
     { nombre_campo: 'detalles',    valor: draft.detalles },
@@ -118,6 +119,9 @@ export function fichaToCharacterDraft(ficha: FichaDetalle): Partial<CharacterDra
 
   const equipo = get<CharacterDraft['equipo']>('equipo')
   if (equipo) draft.equipo = equipo
+
+  const equipoInicial = get<CharacterDraft['equipo_inicial']>('equipo_inicial')
+  if (equipoInicial) draft.equipo_inicial = equipoInicial
 
   const monedas = get<CharacterDraft['monedas']>('monedas')
   if (monedas) draft.monedas = monedas

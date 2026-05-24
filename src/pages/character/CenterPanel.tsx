@@ -15,13 +15,23 @@ interface Props {
 
 // ── Círculo de competencia ─────────────────────────────────────────────────
 
-function ProfCircle({ active, onClick }: { active: boolean; onClick: () => void }) {
+type ProfSource = 'none' | 'manual' | 'trasfondo'
+
+function ProfCircle({ source, onClick }: { source: ProfSource; onClick: () => void }) {
+  if (source === 'trasfondo') {
+    return (
+      <span
+        title="Concedida por trasfondo"
+        className="w-3.5 h-3.5 rounded-full shrink-0 bg-amber-500/80 border-2 border-amber-500 block"
+      />
+    )
+  }
   return (
     <button
       type="button"
       onClick={onClick}
       className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 transition-colors ${
-        active ? 'bg-primary border-primary' : 'border-muted-foreground bg-transparent'
+        source === 'manual' ? 'bg-primary border-primary' : 'border-muted-foreground bg-transparent'
       }`}
     />
   )
@@ -39,7 +49,12 @@ export default function CenterPanel({ draft, razaDetalle, claseDetalle, onChange
   const tamaño    = razaD?.especie?.tamaño    ?? '—'
   const velocidad = razaD?.especie?.velocidad ?? null
 
-  const toggleHab = (key: keyof typeof habs) => onChange({ habilidades: { ...habs, [key]: !habs[key] } })
+  const habsTrasfondo = draft.habilidades_trasfondo
+
+  const toggleHab = (key: keyof typeof habs) => {
+    if (habsTrasfondo.includes(key)) return
+    onChange({ habilidades: { ...habs, [key]: !habs[key] } })
+  }
 
   const casterStat = getCasterStat(claseDetalle?.nombre)
   const percep = getPassivePerception(stats.sab, habs.percepcion, nivel)
@@ -122,9 +137,10 @@ export default function CenterPanel({ draft, razaDetalle, claseDetalle, onChange
         <div className="flex flex-col gap-0.5">
           {SKILLS.map((skill) => {
             const mod = getSkillMod(stats[skill.stat], habs[skill.key], nivel)
+            const source: ProfSource = habsTrasfondo.includes(skill.key) ? 'trasfondo' : habs[skill.key] ? 'manual' : 'none'
             return (
               <div key={skill.key} className="flex items-center gap-1.5 text-xs py-0.5">
-                <ProfCircle active={habs[skill.key]} onClick={() => toggleHab(skill.key)} />
+                <ProfCircle source={source} onClick={() => toggleHab(skill.key)} />
                 <span className="w-6 text-right font-bold text-primary">{formatMod(mod)}</span>
                 <span className="text-muted-foreground truncate">{skill.nombre}</span>
               </div>

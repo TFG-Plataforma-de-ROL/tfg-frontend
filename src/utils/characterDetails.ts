@@ -1,4 +1,6 @@
 import type { ItemDetalle } from '@/services/itemService'
+import { SKILLS } from '@/utils/dnd'
+import type { SkillProficiencies } from '@/types/character'
 
 export interface RasgoConDesc { nombre: string; descripcion?: string }
 type AnyObj = Record<string, unknown>
@@ -30,6 +32,44 @@ export function getClaseInfo(detalle: ItemDetalle | null) {
   const rasgos = clase.rasgos as Record<string, RasgoRaw[]> | undefined
   const rasgosN1 = rasgos?.['1']?.map((r) => ({ nombre: r.nombre, descripcion: r.descripcion })) ?? []
   return { dado, nivel1, salvaciones, rasgosN1 }
+}
+
+export function getClaseHabilidades(detalle: ItemDetalle | null): { elige: number; de: string[] } | null {
+  if (!detalle?.datos) return null
+  const d = detalle.datos as AnyObj
+  const clase = (d.clase ?? d) as AnyObj
+  const competencias = clase.competencias as AnyObj | undefined
+  const hab = competencias?.habilidades as { elige?: number; de?: string[] } | undefined
+  if (!hab || !hab.de || !hab.elige) return null
+  return { elige: hab.elige, de: hab.de }
+}
+
+export function getClaseEquipo(detalle: ItemDetalle | null): Record<string, string[]> | null {
+  if (!detalle?.datos) return null
+  const d = detalle.datos as AnyObj
+  const clase = (d.clase ?? d) as AnyObj
+  const equipo = clase.equipamiento_inicial as Record<string, string[]> | undefined
+  return equipo ?? null
+}
+
+export function getTrasfondoEquipo(detalle: ItemDetalle | null): string[] | null {
+  if (!detalle?.datos) return null
+  const d = detalle.datos as AnyObj
+  const trasfondo = (d.trasfondo ?? d) as AnyObj
+  const equipo = trasfondo.equipo as string[] | undefined
+  return equipo ?? null
+}
+
+export function getTrasfondoHabilidades(detalle: ItemDetalle | null): (keyof SkillProficiencies)[] {
+  if (!detalle?.datos) return []
+  const d = detalle.datos as AnyObj
+  const trasfondo = (d.trasfondo ?? d) as AnyObj
+  const habilidades = trasfondo.competencias_habilidad as string[] | undefined
+  if (!habilidades) return []
+  return habilidades.flatMap(nombre => {
+    const skill = SKILLS.find(s => s.nombre.toLowerCase() === nombre.toLowerCase())
+    return skill ? [skill.key] : []
+  })
 }
 
 export function getTrasfondoInfo(detalle: ItemDetalle | null) {

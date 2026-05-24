@@ -1,8 +1,12 @@
-import { User, Sword, BookOpen, ChevronRight, Sliders } from 'lucide-react'
+import { useState } from 'react'
+import { User, Sword, BookOpen, ChevronRight, Sliders, Package } from 'lucide-react'
 import type { Item, ItemDetalle } from '@/services/itemService'
 import type { CharacterDraft } from '@/types/character'
-import { getMod, formatMod } from '@/utils/dnd'
-import { getRazaInfo, getClaseInfo, getTrasfondoInfo } from '@/utils/characterDetails'
+import { getMod, formatMod, SKILLS } from '@/utils/dnd'
+import { getRazaInfo, getClaseInfo, getClaseHabilidades, getTrasfondoInfo, getClaseEquipo, getTrasfondoEquipo } from '@/utils/characterDetails'
+import { clasificarEquipo } from '@/utils/equipoInicialUtils'
+import { ARMADURAS, calcularCA } from '@/data/armadurasData'
+import EquipoInicialDialog from './EquipoInicialDialog'
 
 const STAT_ORDER: (keyof CharacterDraft['stats'])[] = ['fue', 'des', 'con', 'int', 'sab', 'car']
 
@@ -81,6 +85,60 @@ function TagList({ items }: { items: string[] }) {
   )
 }
 
+// ── Card de habilidades de clase ───────────────────────────────────────────
+
+interface HabilidadesClaseCardProps {
+  opciones: { elige: number; de: string[] }
+  seleccionadas: (keyof CharacterDraft['habilidades'])[]
+  onChange: (keys: (keyof CharacterDraft['habilidades'])[]) => void
+}
+
+function HabilidadesClaseCard({ opciones, seleccionadas, onChange }: HabilidadesClaseCardProps) {
+  const toggle = (key: keyof CharacterDraft['habilidades']) => {
+    if (seleccionadas.includes(key)) {
+      onChange(seleccionadas.filter(k => k !== key))
+    } else if (seleccionadas.length < opciones.elige) {
+      onChange([...seleccionadas, key])
+    }
+  }
+
+  return (
+    <div className="ml-3 flex flex-col gap-1.5 border border-border/40 rounded-lg p-2 bg-secondary/20">
+      <div className="flex items-center justify-between px-1">
+        <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Habilidades</span>
+        <span className="text-[10px] text-muted-foreground">
+          {seleccionadas.length}/{opciones.elige}
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {opciones.de.map(nombre => {
+          const skill = SKILLS.find(s => s.nombre.toLowerCase() === nombre.toLowerCase())
+          if (!skill) return null
+          const activa = seleccionadas.includes(skill.key)
+          const agotado = !activa && seleccionadas.length >= opciones.elige
+          return (
+            <button
+              key={skill.key}
+              type="button"
+              disabled={agotado}
+              onClick={() => toggle(skill.key)}
+              className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors ${
+                activa
+                  ? 'bg-primary/20 border-primary/60 text-primary'
+                  : agotado
+                    ? 'bg-secondary border-border/30 text-muted-foreground/40 cursor-not-allowed'
+                    : 'bg-secondary border-border/40 text-muted-foreground hover:border-primary/40 hover:text-foreground'
+              }`}
+            >
+              {nombre}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ── Card de características ────────────────────────────────────────────────
 
 function CharacteristicsCard({ draft, onClick }: { draft: CharacterDraft; onClick: () => void }) {
@@ -129,7 +187,9 @@ function CharacteristicsCard({ draft, onClick }: { draft: CharacterDraft; onClic
 
 // ── Panel principal ────────────────────────────────────────────────────────
 
-export default function LeftPanel({ draft, razas, clases, trasfondos, razaDetalle, claseDetalle, trasfondoDetalle, onOpenDialog, onOpenWizard }: Props) {
+export default function LeftPanel({ draft, razas, clases, trasfondos, razaDetalle, claseDetalle, trasfondoDetalle, onChange, onOpenDialog, onOpenWizard }: Props) {
+  const [equipoDialogOpen, setEquipoDialogOpen] = useState(false)
+
   const prof = Math.ceil(draft.nivel / 4) + 1
 
   const razaItem = razas.find((r) => r.id_item === draft.id_raza)
@@ -138,7 +198,65 @@ export default function LeftPanel({ draft, razas, clases, trasfondos, razaDetall
 
   const razaInfo = getRazaInfo(razaDetalle)
   const claseInfo = getClaseInfo(claseDetalle)
+  const claseHabilidades = getClaseHabilidades(claseDetalle)
   const trasfondoInfo = getTrasfondoInfo(trasfondoDetalle)
+  const claseEquipo = getClaseEquipo(claseDetalle)
+  const trasfondoEquipo = getTrasfondoEquipo(trasfondoDetalle)
+
+  const handleHabilidadesClase = (keys: (keyof CharacterDraft['habilidades'])[]) => {
+    const prev = draft.habilidades_clase
+    const removed = prev.filter(k => !keys.includes(k))
+    const added = keys.filter(k => !prev.includes(k))
+    const newHabilidades = { ...draft.habilidades }
+    removed.forEach(k => { newHabilidades[k] = false })
+    added.forEach(k => { newHabilidades[k] = true })
+    onChange({ habilidades_clase: keys, habilidades: newHabilidades })
+  }
+
+  const { clase_opcion, trasfondo_opcion } = draft.equipo_inicial
+  const equipoStatus = (() => {
+    const parts: string[] = []
+    if (clase_opcion) parts.push(`Clase: Op. ${clase_opcion.toUpperCase()}`)
+    if (trasfondo_opcion) parts.push(`Trasfondo: Op. ${trasfondo_opcion.toUpperCase()}`)
+    return parts.length > 0 ? parts.join(' · ') : 'Sin seleccionar'
+  })()
+
+  const handleEquipoAccept = (claseOpcion: string | null, trasfondoOpcion: 'a' | 'b' | null) => {
+    // Base: keep only manually-added weapons and equipment (no fuente tag)
+    let armas  = draft.armas.filter(a => !a.fuente)
+    let equipo = draft.equipo.filter(e => !e.fuente)
+    let armaduraId    = draft.armadura_equipada
+    let escudoEquipado = draft.escudo_equipado
+
+    if (claseOpcion && claseEquipo) {
+      const c = clasificarEquipo(claseEquipo[claseOpcion] ?? [], 'clase')
+      armas  = [...armas,  ...c.armas.map(a => ({ ...a, id: crypto.randomUUID() }))]
+      equipo = [...equipo, ...c.equipo.map(e => ({ ...e, id: crypto.randomUUID() }))]
+      if (c.armaduraId)  armaduraId     = c.armaduraId
+      if (c.escudo)      escudoEquipado = true
+    }
+
+    if (trasfondoOpcion) {
+      const lista = trasfondoOpcion === 'a' ? (trasfondoEquipo ?? []) : ['50 po']
+      const t = clasificarEquipo(lista, 'trasfondo')
+      armas  = [...armas,  ...t.armas.map(a => ({ ...a, id: crypto.randomUUID() }))]
+      equipo = [...equipo, ...t.equipo.map(e => ({ ...e, id: crypto.randomUUID() }))]
+      if (t.armaduraId)  armaduraId     = t.armaduraId
+      if (t.escudo)      escudoEquipado = true
+    }
+
+    const armaduraData = ARMADURAS.find(a => a.id === armaduraId) ?? null
+    const ca = calcularCA(armaduraData, escudoEquipado, draft.stats.des)
+
+    onChange({
+      armas,
+      equipo,
+      armadura_equipada: armaduraId,
+      escudo_equipado:   escudoEquipado,
+      combate: { ...draft.combate, ca },
+      equipo_inicial: { clase_opcion: claseOpcion, trasfondo_opcion: trasfondoOpcion },
+    })
+  }
 
   return (
     <div className="flex flex-col gap-3 p-3 h-full">
@@ -183,6 +301,14 @@ export default function LeftPanel({ draft, razas, clases, trasfondos, razaDetall
         )}
       </SelectionCard>
 
+      {claseHabilidades && (
+        <HabilidadesClaseCard
+          opciones={claseHabilidades}
+          seleccionadas={draft.habilidades_clase}
+          onChange={handleHabilidadesClase}
+        />
+      )}
+
       <SelectionCard
         icon={BookOpen}
         label="Trasfondo"
@@ -208,6 +334,36 @@ export default function LeftPanel({ draft, razas, clases, trasfondos, razaDetall
       <hr className="border-border/40" />
 
       <CharacteristicsCard draft={draft} onClick={onOpenWizard} />
+
+      <hr className="border-border/40" />
+
+      <button
+        type="button"
+        onClick={() => setEquipoDialogOpen(true)}
+        className="w-full flex items-center gap-3 p-3 rounded-lg border border-border/60 bg-secondary/40 hover:bg-secondary/80 transition-colors text-left"
+      >
+        <Package className="h-5 w-5 text-primary shrink-0" />
+        <div className="flex flex-col items-start min-w-0 flex-1">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground leading-none mb-0.5">
+            Equipo Inicial
+          </span>
+          <span className={`text-sm font-medium truncate w-full ${clase_opcion || trasfondo_opcion ? 'text-foreground' : 'text-muted-foreground/50'}`}>
+            {equipoStatus}
+          </span>
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+      </button>
+
+      <EquipoInicialDialog
+        open={equipoDialogOpen}
+        onClose={() => setEquipoDialogOpen(false)}
+        claseNombre={claseItem?.nombre ?? ''}
+        trasfondoNombre={trasfondoItem?.nombre ?? ''}
+        claseEquipo={claseEquipo}
+        trasfondoEquipo={trasfondoEquipo}
+        current={draft.equipo_inicial}
+        onAccept={handleEquipoAccept}
+      />
 
       <div className="mt-auto pt-4 border-t border-border/40 flex flex-col gap-1 text-xs text-muted-foreground">
         <p>Bono de competencia: <span className="font-bold text-foreground">+{prof}</span></p>

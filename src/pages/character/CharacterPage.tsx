@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { ROUTES } from '@/config/routes'
 import { personajeService } from '@/services/personajeService'
 import { fichaService, draftToCampos, fichaToCharacterDraft } from '@/services/fichaService'
+import { getTrasfondoHabilidades, getClaseInfo } from '@/utils/characterDetails'
+import { getMod } from '@/utils/dnd'
 import { itemService } from '@/services/itemService'
 import type { Item, ItemDetalle } from '@/services/itemService'
 import type { CharacterDraft } from '@/types/character'
@@ -22,6 +24,8 @@ const DEFAULT_DRAFT: CharacterDraft = {
   id_raza: null,
   id_clase: null,
   id_trasfondo: null,
+  habilidades_clase: [],
+  habilidades_trasfondo: [],
   abilitySetup: null,
   stats: { fue: 10, des: 10, con: 10, int: 10, sab: 10, car: 10 },
   combate: { ca: 10, pv_max: 8, pv_actual: 8, velocidad: 30 },
@@ -38,6 +42,7 @@ const DEFAULT_DRAFT: CharacterDraft = {
   escudo_equipado: false,
   armas: [],
   equipo: [],
+  equipo_inicial: { clase_opcion: null, trasfondo_opcion: null },
   monedas: { platino: 0, oro: 0, plata: 0, cobre: 0 },
   conjuros: [],
   rasgos: [],
@@ -119,13 +124,62 @@ export default function CharacterPage() {
     itemService.getItemById(draft.id_trasfondo).then(setTrasfondoDetalle).catch(() => setTrasfondoDetalle(null))
   }, [draft.id_trasfondo])
 
+  useEffect(() => {
+    if (!trasfondoDetalle) return
+    const keys = getTrasfondoHabilidades(trasfondoDetalle)
+    if (keys.length === 0) return
+    setDraft(prev => {
+      const newHabs = { ...prev.habilidades }
+      keys.forEach(k => { newHabs[k] = true })
+      return { ...prev, habilidades: newHabs, habilidades_trasfondo: keys }
+    })
+  }, [trasfondoDetalle])
+
+  const conScore = draft.stats.con
+  useEffect(() => {
+    const info = getClaseInfo(claseDetalle)
+    if (!info?.nivel1) return
+    const newPvMax = info.nivel1 + getMod(conScore)
+    setDraft(prev => {
+      const atFull = prev.combate.pv_actual >= prev.combate.pv_max
+      return {
+        ...prev,
+        combate: {
+          ...prev.combate,
+          pv_max: newPvMax,
+          pv_actual: atFull ? newPvMax : prev.combate.pv_actual,
+        },
+      }
+    })
+  }, [claseDetalle, conScore])
+
   const handleChange = useCallback((partial: Partial<CharacterDraft>) => {
     setDraft((prev) => {
-      const next = { ...prev, ...partial }
+      let next = { ...prev, ...partial }
       if (partial.stats !== undefined) {
         const armadura = ARMADURAS.find(a => a.id === next.armadura_equipada) ?? null
         const ca = calcularCA(armadura, next.escudo_equipado, next.stats.des)
-        return { ...next, combate: { ...next.combate, ca } }
+        next = { ...next, combate: { ...next.combate, ca } }
+      }
+      if (partial.id_clase !== undefined && partial.id_clase !== prev.id_clase) {
+        next = {
+          ...next,
+          armas:  next.armas.filter(a => a.fuente !== 'clase'),
+          equipo: next.equipo.filter(e => e.fuente !== 'clase'),
+          equipo_inicial: { ...next.equipo_inicial, clase_opcion: null },
+        }
+      }
+      if (partial.id_trasfondo !== undefined && partial.id_trasfondo !== prev.id_trasfondo) {
+        const habsSinTrasfondo = { ...next.habilidades }
+        prev.habilidades_trasfondo.forEach(k => { habsSinTrasfondo[k] = false })
+        next = {
+          ...next,
+          armas:  next.armas.filter(a => a.fuente !== 'trasfondo'),
+          equipo: next.equipo.filter(e => e.fuente !== 'trasfondo'),
+          equipo_inicial: { ...next.equipo_inicial, trasfondo_opcion: null },
+          habilidades: habsSinTrasfondo,
+          habilidades_trasfondo: [],
+        }
       }
       return next
     })

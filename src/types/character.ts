@@ -51,6 +51,8 @@ export interface WeaponEntry {
   dano: string
   tipo_dano: string
   categoria?: string
+  propiedades?: string[]
+  fuente?: 'clase' | 'trasfondo'
 }
 
 export interface EquipmentEntry {
@@ -58,6 +60,12 @@ export interface EquipmentEntry {
   nombre: string
   cantidad: number
   carga?: number
+  fuente?: 'clase' | 'trasfondo'
+}
+
+export interface EquipoInicial {
+  clase_opcion: string | null
+  trasfondo_opcion: 'a' | 'b' | null
 }
 
 export interface Monedas {
@@ -111,6 +119,8 @@ export interface CharacterDraft {
   id_raza: number | null
   id_clase: number | null
   id_trasfondo: number | null
+  habilidades_clase: (keyof SkillProficiencies)[]
+  habilidades_trasfondo: (keyof SkillProficiencies)[]
 
   // Stats
   abilitySetup: AbilitySetup | null
@@ -127,6 +137,7 @@ export interface CharacterDraft {
   // Tabs
   armas: WeaponEntry[]
   equipo: EquipmentEntry[]
+  equipo_inicial: EquipoInicial
   monedas: Monedas
   conjuros: SpellEntry[]
   rasgos: FeatEntry[]
