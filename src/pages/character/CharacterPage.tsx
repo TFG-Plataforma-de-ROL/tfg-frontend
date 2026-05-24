@@ -33,6 +33,8 @@ const DEFAULT_DRAFT: CharacterDraft = {
     supervivencia: false, trato_con_animales: false, arcanos: false,
   },
   inspiracion: 0,
+  armadura_equipada: null,
+  escudo_equipado: false,
   armas: [],
   equipo: [],
   conjuros: [],

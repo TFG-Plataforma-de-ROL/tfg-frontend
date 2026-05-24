@@ -46,7 +46,7 @@ export function draftToCampos(
   const campos: Array<{ nombre_campo: string; valor?: unknown; id_item_valor?: number }> = [
     { nombre_campo: 'ability_setup', valor: draft.abilitySetup },
     { nombre_campo: 'stats',         valor: draft.stats },
-    { nombre_campo: 'combate',     valor: { ...draft.combate, nivel: draft.nivel } },
+    { nombre_campo: 'combate',     valor: { ...draft.combate, nivel: draft.nivel, armadura_equipada: draft.armadura_equipada, escudo_equipado: draft.escudo_equipado } },
     { nombre_campo: 'salvaciones', valor: draft.salvaciones },
     { nombre_campo: 'habilidades', valor: draft.habilidades },
     { nombre_campo: 'inspiracion', valor: { puntos: draft.inspiracion } },
@@ -90,7 +90,7 @@ export function fichaToCharacterDraft(ficha: FichaDetalle): Partial<CharacterDra
   const stats = get<CharacterDraft['stats']>('stats')
   if (stats) draft.stats = stats
 
-  const combate = get<CharacterDraft['combate'] & { nivel?: number }>('combate')
+  const combate = get<CharacterDraft['combate'] & { nivel?: number; armadura_equipada?: string | null; escudo_equipado?: boolean }>('combate')
   if (combate) {
     draft.combate = {
       ca: combate.ca,
@@ -99,6 +99,8 @@ export function fichaToCharacterDraft(ficha: FichaDetalle): Partial<CharacterDra
       velocidad: combate.velocidad,
     }
     if (combate.nivel !== undefined) draft.nivel = combate.nivel
+    draft.armadura_equipada = combate.armadura_equipada ?? null
+    draft.escudo_equipado   = combate.escudo_equipado   ?? false
   }
 
   const salvaciones = get<CharacterDraft['salvaciones']>('salvaciones')

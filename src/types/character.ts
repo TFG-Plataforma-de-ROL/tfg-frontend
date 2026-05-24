@@ -50,6 +50,7 @@ export interface WeaponEntry {
   bonus_ataque: number
   dano: string
   tipo_dano: string
+  categoria?: string
 }
 
 export interface EquipmentEntry {
@@ -110,6 +111,10 @@ export interface CharacterDraft {
   salvaciones: SavingThrows
   habilidades: SkillProficiencies
   inspiracion: number  // 0-3
+
+  // Defensa
+  armadura_equipada: string | null   // id de ArmaduraBase
+  escudo_equipado: boolean
 
   // Tabs
   armas: WeaponEntry[]
