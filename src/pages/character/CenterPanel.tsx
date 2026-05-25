@@ -22,7 +22,7 @@ function ProfCircle({ source, onClick }: { source: ProfSource; onClick: () => vo
     return (
       <span
         title="Concedida por trasfondo"
-        className="w-3.5 h-3.5 rounded-full shrink-0 bg-amber-500/80 border-2 border-amber-500 block"
+        className="w-3.5 h-3.5 rounded-full shrink-0 bg-primary border-2 border-primary block"
       />
     )
   }
@@ -136,7 +136,8 @@ export default function CenterPanel({ draft, razaDetalle, claseDetalle, onChange
         <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">Habilidades</p>
         <div className="flex flex-col gap-0.5">
           {SKILLS.map((skill) => {
-            const mod = getSkillMod(stats[skill.stat], habs[skill.key], nivel)
+            const isProficient = habs[skill.key] || habsTrasfondo.includes(skill.key)
+            const mod = getSkillMod(stats[skill.stat], isProficient, nivel)
             const source: ProfSource = habsTrasfondo.includes(skill.key) ? 'trasfondo' : habs[skill.key] ? 'manual' : 'none'
             return (
               <div key={skill.key} className="flex items-center gap-1.5 text-xs py-0.5">
