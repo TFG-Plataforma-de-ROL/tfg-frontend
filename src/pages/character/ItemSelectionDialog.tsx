@@ -7,6 +7,22 @@ import { itemService, type Item } from '@/services/itemService'
 
 interface Rasgo { nombre: string; descripcion: string }
 
+interface DatosEstiloCombate {
+  estilo_combate: {
+    nombre: string
+    descripcion: string
+  }
+}
+
+interface DatosSubclase {
+  subclase: {
+    nombre: string
+    clase: string
+    descripcion: string
+    rasgos_nivel_3?: Rasgo[]
+  }
+}
+
 interface DatosRaza {
   especie: {
     nombre: string
@@ -142,14 +158,45 @@ function DetailTrasfondo({ datos }: { datos: DatosTrasfondo }) {
   )
 }
 
+function DetailEstiloCombate({ datos }: { datos: DatosEstiloCombate }) {
+  return (
+    <Section title="Efecto">
+      <p className="text-sm text-muted-foreground">{datos.estilo_combate.descripcion}</p>
+    </Section>
+  )
+}
+
+function DetailSubclase({ datos }: { datos: DatosSubclase }) {
+  const s = datos.subclase
+  return (
+    <>
+      <Section title="Descripción">
+        <p className="text-sm text-muted-foreground">{s.descripcion}</p>
+      </Section>
+      {s.rasgos_nivel_3 && s.rasgos_nivel_3.length > 0 && (
+        <Section title="Rasgos de nivel 3">
+          {s.rasgos_nivel_3.map((r) => (
+            <div key={r.nombre} className="mb-2">
+              <p className="text-sm font-semibold">{r.nombre}</p>
+              <p className="text-sm text-muted-foreground">{r.descripcion}</p>
+            </div>
+          ))}
+        </Section>
+      )}
+    </>
+  )
+}
+
 function ItemDetail({ item, datos }: { item: Item; datos: unknown }) {
   return (
     <div>
       <h3 className="text-lg font-bold mb-4">{item.nombre}</h3>
       {datos == null && <p className="text-sm text-muted-foreground italic">Sin descripción disponible.</p>}
-      {item.tipo_item === 'raza'      && datos != null && <DetailRaza      datos={datos as DatosRaza}      />}
-      {item.tipo_item === 'clase'     && datos != null && <DetailClase     datos={datos as DatosClase}     />}
-      {item.tipo_item === 'trasfondo' && datos != null && <DetailTrasfondo datos={datos as DatosTrasfondo} />}
+      {item.tipo_item === 'raza'           && datos != null && <DetailRaza           datos={datos as DatosRaza}           />}
+      {item.tipo_item === 'clase'          && datos != null && <DetailClase          datos={datos as DatosClase}          />}
+      {item.tipo_item === 'trasfondo'      && datos != null && <DetailTrasfondo      datos={datos as DatosTrasfondo}      />}
+      {item.tipo_item === 'estilo_combate'    && datos != null && <DetailEstiloCombate datos={datos as DatosEstiloCombate} />}
+      {item.tipo_item.startsWith('subclase_') && datos != null && <DetailSubclase     datos={datos as DatosSubclase}       />}
     </div>
   )
 }

@@ -116,11 +116,16 @@ export interface CharacterDraft {
   // Identidad
   nombre: string
   nivel: number
+  hp_por_nivel: number[]
   id_raza: number | null
   id_clase: number | null
   id_trasfondo: number | null
   habilidades_clase: (keyof SkillProficiencies)[]
   habilidades_trasfondo: (keyof SkillProficiencies)[]
+
+  // Progresión de niveles
+  estilo_combate_id: number | null
+  id_subclase: number | null
 
   // Stats
   abilitySetup: AbilitySetup | null

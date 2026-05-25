@@ -7,6 +7,7 @@ import { getRazaInfo, getClaseInfo, getClaseHabilidades, getTrasfondoInfo, getCl
 import { clasificarEquipo } from '@/utils/equipoInicialUtils'
 import { ARMADURAS, calcularCA } from '@/data/armadurasData'
 import EquipoInicialDialog from './EquipoInicialDialog'
+import LevelProgressionPanel from './LevelProgressionPanel'
 
 const STAT_ORDER: (keyof CharacterDraft['stats'])[] = ['fue', 'des', 'con', 'int', 'sab', 'car']
 
@@ -24,6 +25,8 @@ interface Props {
   razaDetalle: ItemDetalle | null
   claseDetalle: ItemDetalle | null
   trasfondoDetalle: ItemDetalle | null
+  estilosCombate: Item[]
+  subclasesPorClase: Record<string, Item[]>
   onChange: (partial: Partial<CharacterDraft>) => void
   onOpenDialog: (type: 'raza' | 'clase' | 'trasfondo') => void
   onOpenWizard: () => void
@@ -187,7 +190,7 @@ function CharacteristicsCard({ draft, onClick }: { draft: CharacterDraft; onClic
 
 // ── Panel principal ────────────────────────────────────────────────────────
 
-export default function LeftPanel({ draft, razas, clases, trasfondos, razaDetalle, claseDetalle, trasfondoDetalle, onChange, onOpenDialog, onOpenWizard }: Props) {
+export default function LeftPanel({ draft, razas, clases, trasfondos, razaDetalle, claseDetalle, trasfondoDetalle, estilosCombate, subclasesPorClase, onChange, onOpenDialog, onOpenWizard }: Props) {
   const [equipoDialogOpen, setEquipoDialogOpen] = useState(false)
 
   const prof = Math.ceil(draft.nivel / 4) + 1
@@ -363,6 +366,16 @@ export default function LeftPanel({ draft, razas, clases, trasfondos, razaDetall
         trasfondoEquipo={trasfondoEquipo}
         current={draft.equipo_inicial}
         onAccept={handleEquipoAccept}
+      />
+
+      <hr className="border-border/40" />
+      <LevelProgressionPanel
+        draft={draft}
+        claseDetalle={claseDetalle}
+        claseNombre={claseItem?.nombre}
+        estilosCombate={estilosCombate}
+        subclases={claseItem ? (subclasesPorClase[claseItem.nombre] ?? []) : []}
+        onChange={onChange}
       />
 
       <div className="mt-auto pt-4 border-t border-border/40 flex flex-col gap-1 text-xs text-muted-foreground">

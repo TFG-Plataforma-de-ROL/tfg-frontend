@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Save, ArrowLeft, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -21,11 +21,14 @@ import AbilityWizardModal from './AbilityWizardModal'
 const DEFAULT_DRAFT: CharacterDraft = {
   nombre: '',
   nivel: 1,
+  hp_por_nivel: [],
   id_raza: null,
   id_clase: null,
   id_trasfondo: null,
   habilidades_clase: [],
   habilidades_trasfondo: [],
+  estilo_combate_id: null,
+  id_subclase: null,
   abilitySetup: null,
   stats: { fue: 10, des: 10, con: 10, int: 10, sab: 10, car: 10 },
   combate: { ca: 10, pv_max: 8, pv_actual: 8, velocidad: 30 },
@@ -67,6 +70,8 @@ export default function CharacterPage() {
   const [razas, setRazas] = useState<Item[]>([])
   const [clases, setClases] = useState<Item[]>([])
   const [trasfondos, setTrasfondos] = useState<Item[]>([])
+  const [estilosCombate, setEstilosCombate] = useState<Item[]>([])
+  const [subclasesPorClase, setSubclasesPorClase] = useState<Record<string, Item[]>>({})
 
   const [dialogOpen, setDialogOpen] = useState<'raza' | 'clase' | 'trasfondo' | null>(null)
   const [wizardOpen, setWizardOpen] = useState(false)
@@ -84,11 +89,18 @@ export default function CharacterPage() {
       itemService.getItems('raza', DND_SISTEMA_ROL_ID),
       itemService.getItems('clase', DND_SISTEMA_ROL_ID),
       itemService.getItems('trasfondo', DND_SISTEMA_ROL_ID),
-    ]).then(([r, c, t]) => {
+      itemService.getItems('estilo_combate', DND_SISTEMA_ROL_ID),
+      itemService.getItems('subclase_guerrero', DND_SISTEMA_ROL_ID),
+      itemService.getItems('subclase_mago', DND_SISTEMA_ROL_ID),
+      itemService.getItems('subclase_picaro', DND_SISTEMA_ROL_ID),
+      itemService.getItems('subclase_clerigo', DND_SISTEMA_ROL_ID),
+    ]).then(([r, c, t, ec, sg, sm, sp, sc]) => {
       setRazas(r)
       setClases(c)
       setTrasfondos(t)
-    })
+      setEstilosCombate(ec)
+      setSubclasesPorClase({ Guerrero: sg, Mago: sm, Pícaro: sp, Clérigo: sc })
+    }).catch((err) => console.error('Error cargando items:', err))
   }, [])
 
   useEffect(() => {
@@ -135,40 +147,93 @@ export default function CharacterPage() {
     })
   }, [trasfondoDetalle])
 
-  const conScore = draft.stats.con
+  const claseDetalleRef = useRef(claseDetalle)
+  claseDetalleRef.current = claseDetalle
+
+  // Reconstruye hp_por_nivel cuando cambia la clase (o cuando está vacío tras carga)
   useEffect(() => {
     const info = getClaseInfo(claseDetalle)
     if (!info?.nivel1) return
-    const newPvMax = info.nivel1 + getMod(conScore)
+    const dieMax = parseInt((info.dado ?? '').replace('d', ''), 10) || info.nivel1
     setDraft(prev => {
+      if (prev.hp_por_nivel.length === prev.nivel) return prev
+      const conMod = getMod(prev.stats.con)
+      const hp_por_nivel = Array.from({ length: prev.nivel }, (_, i) =>
+        i === 0 ? info.nivel1! + conMod : dieMax + conMod
+      )
+      const pv_max = hp_por_nivel.reduce((a, b) => a + b, 0)
       const atFull = prev.combate.pv_actual >= prev.combate.pv_max
       return {
         ...prev,
-        combate: {
-          ...prev.combate,
-          pv_max: newPvMax,
-          pv_actual: atFull ? newPvMax : prev.combate.pv_actual,
-        },
+        hp_por_nivel,
+        combate: { ...prev.combate, pv_max, pv_actual: atFull ? pv_max : prev.combate.pv_actual },
       }
     })
-  }, [claseDetalle, conScore])
+  }, [claseDetalle])
 
   const handleChange = useCallback((partial: Partial<CharacterDraft>) => {
     setDraft((prev) => {
       let next = { ...prev, ...partial }
+
+      // CA
       if (partial.stats !== undefined) {
         const armadura = ARMADURAS.find(a => a.id === next.armadura_equipada) ?? null
         const ca = calcularCA(armadura, next.escudo_equipado, next.stats.des)
         next = { ...next, combate: { ...next.combate, ca } }
       }
+
+      // HP: nivel o CON cambian
+      const nivelChanged = partial.nivel !== undefined && partial.nivel !== prev.nivel
+      const conChanged = partial.stats !== undefined && partial.stats.con !== prev.stats.con
+      if (nivelChanged || conChanged) {
+        const info = getClaseInfo(claseDetalleRef.current)
+        if (info?.nivel1) {
+          const dieMax = parseInt((info.dado ?? '').replace('d', ''), 10) || info.nivel1
+          const conMod = getMod(next.stats.con)
+          let hp = [...next.hp_por_nivel]
+
+          if (nivelChanged) {
+            const oldNivel = prev.nivel
+            const newNivel = next.nivel
+            if (newNivel > oldNivel) {
+              for (let i = oldNivel; i < newNivel; i++) {
+                hp[i] = dieMax + conMod
+              }
+            } else {
+              hp = hp.slice(0, newNivel)
+            }
+          }
+
+          if (conChanged) {
+            const idx = next.nivel - 1
+            while (hp.length <= idx) {
+              const i = hp.length
+              hp.push(i === 0 ? info.nivel1 + conMod : dieMax + conMod)
+            }
+            hp[idx] = idx === 0 ? info.nivel1 + conMod : dieMax + conMod
+          }
+
+          const pv_max = hp.reduce((a, b) => a + b, 0)
+          const atFull = prev.combate.pv_actual >= prev.combate.pv_max
+          next = {
+            ...next,
+            hp_por_nivel: hp,
+            combate: { ...next.combate, pv_max, pv_actual: atFull ? pv_max : next.combate.pv_actual },
+          }
+        }
+      }
+
+      // Clase cambia → limpiar equipo/armas y resetear hp_por_nivel
       if (partial.id_clase !== undefined && partial.id_clase !== prev.id_clase) {
         next = {
           ...next,
+          hp_por_nivel: [],
           armas:  next.armas.filter(a => a.fuente !== 'clase'),
           equipo: next.equipo.filter(e => e.fuente !== 'clase'),
           equipo_inicial: { ...next.equipo_inicial, clase_opcion: null },
         }
       }
+
       if (partial.id_trasfondo !== undefined && partial.id_trasfondo !== prev.id_trasfondo) {
         const habsSinTrasfondo = { ...next.habilidades }
         prev.habilidades_trasfondo.forEach(k => { habsSinTrasfondo[k] = false })
@@ -181,6 +246,7 @@ export default function CharacterPage() {
           habilidades_trasfondo: [],
         }
       }
+
       return next
     })
     setSaveMsg(null)
@@ -291,6 +357,8 @@ export default function CharacterPage() {
             razaDetalle={razaDetalle}
             claseDetalle={claseDetalle}
             trasfondoDetalle={trasfondoDetalle}
+            estilosCombate={estilosCombate}
+            subclasesPorClase={subclasesPorClase}
             onChange={handleChange}
             onOpenDialog={setDialogOpen}
             onOpenWizard={() => setWizardOpen(true)}

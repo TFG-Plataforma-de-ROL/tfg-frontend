@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Plus, Trash2, ChevronDown, Sword, Shield, Volume2 } from 'lucide-react'
-import { getRazaInfo, getClaseInfo, getTrasfondoInfo } from '@/utils/characterDetails'
+import { getRazaInfo, getClaseRasgosAgrupadosPorNivel, getTrasfondoInfo } from '@/utils/characterDetails'
 import type { RasgoConDesc } from '@/utils/characterDetails'
 import WeaponPickerDialog from './WeaponPickerDialog'
 import ArmorPickerDialog from './ArmorPickerDialog'
@@ -429,13 +429,12 @@ function FeatSection({ title, items }: { title: string; items: RasgoConDesc[] })
 
 function FeatsTab({ draft, onChange, razaDetalle, claseDetalle, trasfondoDetalle }: Props) {
   const razaInfo = getRazaInfo(razaDetalle)
-  const claseInfo = getClaseInfo(claseDetalle)
   const trasfondoInfo = getTrasfondoInfo(trasfondoDetalle)
 
   const trasfondoFeats: RasgoConDesc[] = trasfondoInfo?.dote ? [trasfondoInfo.dote] : []
-  const claseFeats = claseInfo?.rasgosN1 ?? []
+  const claseRasgosPorNivel = getClaseRasgosAgrupadosPorNivel(claseDetalle, draft.nivel)
   const razaFeats = razaInfo?.rasgos ?? []
-  const hasAutoFeats = claseFeats.length > 0 || trasfondoFeats.length > 0 || razaFeats.length > 0
+  const hasAutoFeats = claseRasgosPorNivel.length > 0 || trasfondoFeats.length > 0 || razaFeats.length > 0
 
   const update = (id: string, partial: Partial<FeatEntry>) =>
     onChange({ rasgos: draft.rasgos.map((f) => f.id === id ? { ...f, ...partial } : f) })
@@ -447,7 +446,9 @@ function FeatsTab({ draft, onChange, razaDetalle, claseDetalle, trasfondoDetalle
       {hasAutoFeats && (
         <div className="grid grid-cols-2 gap-x-4 gap-y-3">
           <div className="flex flex-col gap-3">
-            <FeatSection title="Rasgos de Clase" items={claseFeats} />
+            {claseRasgosPorNivel.map(({ nivel: n, rasgos }) => (
+              <FeatSection key={n} title={`Rasgos de Clase · Nv. ${n}`} items={rasgos} />
+            ))}
             <FeatSection title="Rasgos de Trasfondo" items={trasfondoFeats} />
           </div>
           <div className="flex flex-col gap-3">

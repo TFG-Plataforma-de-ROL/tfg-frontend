@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { CharacterDraft, CombatStats } from '@/types/character'
 import type { ItemDetalle } from '@/services/itemService'
 import { getMod, getProfBonus, formatMod, STAT_NAMES, type StatKey } from '@/utils/dnd'
@@ -30,37 +31,31 @@ function getProfSaves(claseDetalle: ItemDetalle | null): Set<StatKey> {
 
 function LevelButton({ nivel, onChange }: { nivel: number; onChange: (n: number) => void }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open])
 
   return (
-    <div ref={ref} className="relative shrink-0">
+    <>
       <button
         type="button"
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-secondary border border-border/60 hover:border-primary/60 transition-colors"
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-secondary border border-border/60 hover:border-primary/60 transition-colors shrink-0"
       >
         <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Nv</span>
         <span className="text-primary font-black text-base leading-none">{nivel}</span>
         <ChevronDown className="h-3 w-3 text-muted-foreground" />
       </button>
-      {open && (
-        <div className="absolute left-0 top-full mt-1 z-50 bg-popover border border-border rounded-lg p-2 shadow-xl">
-          <div className="grid grid-cols-5 gap-1">
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Seleccionar nivel</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-5 gap-2 pt-2">
             {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => (
               <button
                 key={n}
                 type="button"
                 onClick={() => { onChange(n); setOpen(false) }}
-                className={`w-8 h-8 rounded text-xs font-bold border transition-all ${
+                className={`h-10 rounded-lg text-sm font-bold border transition-all ${
                   nivel === n
                     ? 'bg-primary border-primary text-primary-foreground'
                     : 'bg-secondary border-border hover:border-primary/60 text-foreground'
@@ -70,9 +65,9 @@ function LevelButton({ nivel, onChange }: { nivel: number; onChange: (n: number)
               </button>
             ))}
           </div>
-        </div>
-      )}
-    </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 

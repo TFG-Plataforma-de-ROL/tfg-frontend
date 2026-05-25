@@ -72,6 +72,23 @@ export function getTrasfondoHabilidades(detalle: ItemDetalle | null): (keyof Ski
   })
 }
 
+export function getClaseRasgosAgrupadosPorNivel(
+  detalle: ItemDetalle | null,
+  nivel: number,
+): { nivel: number; rasgos: RasgoConDesc[] }[] {
+  if (!detalle?.datos) return []
+  const d = detalle.datos as AnyObj
+  const clase = (d.clase ?? d) as AnyObj
+  const rasgos = clase.rasgos as Record<string, RasgoRaw[]> | undefined
+  if (!rasgos) return []
+  return Array.from({ length: nivel }, (_, i) => i + 1)
+    .map(n => ({
+      nivel: n,
+      rasgos: (rasgos[String(n)] ?? []).map(r => ({ nombre: r.nombre, descripcion: r.descripcion })),
+    }))
+    .filter(g => g.rasgos.length > 0)
+}
+
 export function getTrasfondoInfo(detalle: ItemDetalle | null) {
   if (!detalle?.datos) return null
   const d = detalle.datos as AnyObj

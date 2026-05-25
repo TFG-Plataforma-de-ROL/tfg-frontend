@@ -46,7 +46,7 @@ export function draftToCampos(
   const campos: Array<{ nombre_campo: string; valor?: unknown; id_item_valor?: number }> = [
     { nombre_campo: 'ability_setup', valor: draft.abilitySetup },
     { nombre_campo: 'stats',         valor: draft.stats },
-    { nombre_campo: 'combate',     valor: { ...draft.combate, nivel: draft.nivel, armadura_equipada: draft.armadura_equipada, escudo_equipado: draft.escudo_equipado } },
+    { nombre_campo: 'combate',     valor: { ...draft.combate, nivel: draft.nivel, armadura_equipada: draft.armadura_equipada, escudo_equipado: draft.escudo_equipado, estilo_combate_id: draft.estilo_combate_id, id_subclase: draft.id_subclase, hp_por_nivel: draft.hp_por_nivel } },
     { nombre_campo: 'salvaciones', valor: draft.salvaciones },
     { nombre_campo: 'habilidades', valor: draft.habilidades },
     { nombre_campo: 'inspiracion', valor: { puntos: draft.inspiracion } },
@@ -92,7 +92,7 @@ export function fichaToCharacterDraft(ficha: FichaDetalle): Partial<CharacterDra
   const stats = get<CharacterDraft['stats']>('stats')
   if (stats) draft.stats = stats
 
-  const combate = get<CharacterDraft['combate'] & { nivel?: number; armadura_equipada?: string | null; escudo_equipado?: boolean }>('combate')
+  const combate = get<CharacterDraft['combate'] & { nivel?: number; armadura_equipada?: string | null; escudo_equipado?: boolean; estilo_combate_id?: number | null; id_subclase?: number | null; hp_por_nivel?: number[] }>('combate')
   if (combate) {
     draft.combate = {
       ca: combate.ca,
@@ -101,8 +101,11 @@ export function fichaToCharacterDraft(ficha: FichaDetalle): Partial<CharacterDra
       velocidad: combate.velocidad,
     }
     if (combate.nivel !== undefined) draft.nivel = combate.nivel
-    draft.armadura_equipada = combate.armadura_equipada ?? null
-    draft.escudo_equipado   = combate.escudo_equipado   ?? false
+    draft.armadura_equipada  = combate.armadura_equipada  ?? null
+    draft.escudo_equipado    = combate.escudo_equipado    ?? false
+    draft.estilo_combate_id  = combate.estilo_combate_id  ?? null
+    draft.id_subclase        = combate.id_subclase        ?? null
+    draft.hp_por_nivel       = combate.hp_por_nivel       ?? []
   }
 
   const salvaciones = get<CharacterDraft['salvaciones']>('salvaciones')
