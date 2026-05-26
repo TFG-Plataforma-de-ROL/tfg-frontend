@@ -6,16 +6,22 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Plus, Trash2, ChevronDown, Sword, Shield, Volume2 } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, Sword, Shield, Volume2, Sparkles, RotateCcw } from 'lucide-react'
 import { getRazaInfo, getClaseRasgosAgrupadosPorNivel, getTrasfondoInfo } from '@/utils/characterDetails'
 import type { RasgoConDesc } from '@/utils/characterDetails'
 import WeaponPickerDialog from './WeaponPickerDialog'
 import ArmorPickerDialog from './ArmorPickerDialog'
+import SpellPickerDialog from './SpellPickerDialog'
 import { ARMAS, tieneCompetencia, type ArmaBase, type CategoriaArma } from '@/data/armasData'
 import {
   ARMADURAS, calcularCA, formulaCA,
   tieneCompetenciaArmadura, tieneCompetenciaEscudo,
 } from '@/data/armadurasData'
+import type { HechizoDato } from '@/data/hechizosData'
+import {
+  getSpellDC, getSpellAttackBonus, formatMod,
+  getLanzamientoInfo, getSpellSlots, getCantripCount,
+} from '@/utils/dnd'
 
 interface BaseProps {
   draft: CharacterDraft
@@ -26,6 +32,7 @@ interface Props extends BaseProps {
   razaDetalle: ItemDetalle | null
   claseDetalle: ItemDetalle | null
   trasfondoDetalle: ItemDetalle | null
+  subclaseDetalle?: ItemDetalle | null
 }
 
 // ── Armas ──────────────────────────────────────────────────────────────────
@@ -360,37 +367,301 @@ function EquipmentTab({ draft, onChange }: BaseProps) {
 
 // ── Conjuros ───────────────────────────────────────────────────────────────
 
-function SpellsTab({ draft, onChange }: BaseProps) {
-  const add = () => {
-    const entry: SpellEntry = { id: crypto.randomUUID(), nombre: '', nivel: 0, escuela: '', descripcion: '' }
-    onChange({ conjuros: [...draft.conjuros, entry] })
-  }
-  const update = (id: string, partial: Partial<SpellEntry>) =>
-    onChange({ conjuros: draft.conjuros.map((s) => s.id === id ? { ...s, ...partial } : s) })
-  const remove = (id: string) =>
-    onChange({ conjuros: draft.conjuros.filter((s) => s.id !== id) })
+interface SpellsTabProps extends BaseProps {
+  claseDetalle: ItemDetalle | null
+  subclaseDetalle?: ItemDetalle | null
+}
+
+function SpellSlotCircles({
+  total, used, onToggle,
+}: { total: number; used: number; onToggle: (idx: number) => void }) {
+  return (
+    <div className="flex items-center gap-1 flex-wrap">
+      {Array.from({ length: total }).map((_, i) => (
+        <button
+          key={i}
+          type="button"
+          title={i < used ? 'Casilla gastada (clic para recuperar)' : 'Casilla disponible (clic para gastar)'}
+          onClick={() => onToggle(i)}
+          className={`w-4 h-4 rounded-full border-2 transition-colors shrink-0 ${
+            i < used
+              ? 'bg-primary/30 border-primary/60'
+              : 'bg-transparent border-muted-foreground/40 hover:border-primary/60'
+          }`}
+        />
+      ))}
+    </div>
+  )
+}
+
+function SpellRow({
+  spell, claseNombre, onReplace, onRemove,
+}: {
+  spell: SpellEntry
+  claseNombre?: string | null
+  onReplace: (h: HechizoDato) => void
+  onRemove: () => void
+}) {
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [expanded, setExpanded] = useState(false)
 
   return (
-    <div className="flex flex-col gap-2">
-      {draft.conjuros.map((s) => (
-        <div key={s.id} className="flex flex-col gap-1 p-2 rounded-md bg-secondary/60 border border-border/40">
-          <div className="flex gap-1 items-center">
-            <Input value={s.nombre} onChange={(e) => update(s.id, { nombre: e.target.value })}
-              placeholder="Bola de fuego" className="h-7 text-xs bg-background border-border/60 flex-1" />
-            <input type="number" value={s.nivel} min={0} max={9}
-              onChange={(e) => update(s.id, { nivel: Number(e.target.value) })}
-              className="w-12 h-7 bg-background border border-border/60 rounded-md text-center text-xs focus:outline-none focus:ring-1 focus:ring-ring [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-            <button type="button" onClick={() => remove(s.id)} className="text-destructive hover:text-destructive/80 p-1">
-              <Trash2 className="h-3.5 w-3.5" />
+    <>
+      <div className="grid grid-cols-[1fr_80px_80px_20px] gap-1 items-center group">
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          className={`h-7 px-2 rounded-md border text-left text-xs truncate transition-colors ${
+            spell.nombre
+              ? 'bg-secondary/60 border-border/40 hover:border-primary/40 hover:text-primary'
+              : 'bg-secondary/30 border-dashed border-border/40 text-primary/60 hover:text-primary hover:border-primary/40'
+          }`}
+        >
+          {spell.nombre || 'No seleccionado'}
+        </button>
+        <div
+          className="h-7 flex items-center justify-center text-[10px] text-muted-foreground truncate px-1 cursor-pointer"
+          onClick={() => spell.nombre && setExpanded(e => !e)}
+          title={spell.duracion}
+        >
+          {spell.duracion ?? '—'}
+        </div>
+        <div className="h-7 flex items-center justify-center text-[10px] text-muted-foreground truncate px-1" title={spell.alcance}>
+          {spell.alcance ?? '—'}
+        </div>
+        <button type="button" onClick={onRemove} className="text-destructive/50 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <Trash2 className="h-3 w-3" />
+        </button>
+      </div>
+      {expanded && spell.descripcion && (
+        <p className="text-[10px] text-muted-foreground leading-snug px-2 pb-1 bg-secondary/20 rounded-md">
+          {spell.descripcion}
+          {spell.concentracion && <span className="ml-2 text-amber-400/80">[Concentración]</span>}
+          {spell.ritual && <span className="ml-2 text-cyan-400/80">[Ritual]</span>}
+        </p>
+      )}
+      <SpellPickerDialog
+        open={pickerOpen}
+        nivel={spell.nivel}
+        claseNombre={claseNombre}
+        onSelect={onReplace}
+        onClose={() => setPickerOpen(false)}
+      />
+    </>
+  )
+}
+
+function SpellsTab({ draft, onChange, claseDetalle, subclaseDetalle }: SpellsTabProps) {
+  const [pickerNivel, setPickerNivel] = useState<number | null>(null)
+
+  const lanzamiento = getLanzamientoInfo(claseDetalle, subclaseDetalle ?? null)
+  const claseNombre = claseDetalle?.nombre ?? null
+
+  if (!lanzamiento) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-3 text-muted-foreground">
+        <Sparkles className="h-10 w-10 opacity-15" />
+        <p className="text-xs text-center max-w-[200px] leading-relaxed">
+          Esta clase no puede lanzar conjuros, o aún no has seleccionado ninguna clase.
+        </p>
+      </div>
+    )
+  }
+
+  const nivel = draft.nivel
+  const stat = lanzamiento.stat
+  const statVal = draft.stats[stat]
+  const dc = getSpellDC(statVal, nivel)
+  const atk = getSpellAttackBonus(statVal, nivel)
+  const statLabel = stat.toUpperCase()
+
+  const slots = getSpellSlots(nivel, lanzamiento.tipo)
+  const cantripCount = getCantripCount(nivel, lanzamiento.trucos_por_nivel)
+
+  // Spells by slot level
+  const conjurosPorNivel = (n: number) => draft.conjuros.filter((s) => s.nivel === n)
+
+  const addSpell = (nivel: number, hechizo: HechizoDato) => {
+    const entry: SpellEntry = {
+      id: crypto.randomUUID(),
+      nombre: hechizo.nombre,
+      nivel,
+      escuela: hechizo.escuela,
+      descripcion: hechizo.descripcion,
+      tiempo_lanzamiento: hechizo.tiempo_lanzamiento,
+      alcance: hechizo.alcance,
+      duracion: hechizo.duracion,
+      concentracion: hechizo.concentracion,
+      ritual: hechizo.ritual,
+    }
+    onChange({ conjuros: [...draft.conjuros, entry] })
+  }
+
+  const replaceSpell = (id: string, hechizo: HechizoDato) => {
+    onChange({
+      conjuros: draft.conjuros.map((s) =>
+        s.id === id
+          ? {
+              ...s,
+              nombre: hechizo.nombre,
+              escuela: hechizo.escuela,
+              descripcion: hechizo.descripcion,
+              tiempo_lanzamiento: hechizo.tiempo_lanzamiento,
+              alcance: hechizo.alcance,
+              duracion: hechizo.duracion,
+              concentracion: hechizo.concentracion,
+              ritual: hechizo.ritual,
+            }
+          : s,
+      ),
+    })
+  }
+
+  const removeSpell = (id: string) =>
+    onChange({ conjuros: draft.conjuros.filter((s) => s.id !== id) })
+
+  const casillasUsadas = draft.casillas_usadas ?? {}
+
+  const toggleSlot = (spellLevel: number, idx: number) => {
+    const used = casillasUsadas[spellLevel] ?? 0
+    const newUsed = idx < used ? used - 1 : used + 1
+    onChange({ casillas_usadas: { ...casillasUsadas, [spellLevel]: Math.min(newUsed, slots[spellLevel - 1] ?? 0) } })
+  }
+
+  const resetSlots = () => onChange({ casillas_usadas: {} })
+
+  const cantripsActuales = conjurosPorNivel(0)
+
+  return (
+    <div className="flex flex-col gap-0">
+      {/* Header bar */}
+      <div className="flex items-center gap-4 px-1 pb-3 border-b border-border/30 mb-3">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wide">DC</span>
+          <span className="text-base font-black text-primary">{dc}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Ataque</span>
+          <span className="text-base font-black text-primary">{formatMod(atk)}</span>
+        </div>
+        <div className="flex items-center gap-1.5 ml-1">
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary font-semibold">{statLabel}</span>
+          <span className="text-[11px] text-muted-foreground">{formatMod(Math.floor((statVal - 10) / 2))}</span>
+        </div>
+        <button
+          type="button"
+          onClick={resetSlots}
+          title="Recuperar todas las casillas (Descanso largo)"
+          className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-secondary"
+        >
+          <RotateCcw className="h-3 w-3" /> Desc. largo
+        </button>
+      </div>
+
+      {/* Trucos (Cantrips) */}
+      {cantripCount > 0 && (
+        <div className="flex flex-col gap-1 mb-4">
+          <span className="text-[11px] font-semibold text-primary uppercase tracking-wide mb-1">Trucos</span>
+          <div className="grid grid-cols-[1fr_80px_80px_20px] gap-1 text-[9px] uppercase tracking-wide text-muted-foreground px-0.5 mb-0.5">
+            <span>Nombre</span>
+            <span className="text-center">Duración</span>
+            <span className="text-center">Alcance</span>
+            <span />
+          </div>
+          {cantripsActuales.map((s) => (
+            <SpellRow
+              key={s.id}
+              spell={s}
+              claseNombre={claseNombre}
+              onReplace={(h) => replaceSpell(s.id, h)}
+              onRemove={() => removeSpell(s.id)}
+            />
+          ))}
+          {/* Fill empty cantrip slots */}
+          {Array.from({ length: Math.max(0, cantripCount - cantripsActuales.length) }).map((_, i) => (
+            <div key={`empty-cantrip-${i}`} className="grid grid-cols-[1fr_80px_80px_20px] gap-1 items-center">
+              <button
+                type="button"
+                onClick={() => setPickerNivel(0)}
+                className="h-7 px-2 rounded-md border border-dashed border-border/40 text-left text-xs text-primary/60 hover:text-primary hover:border-primary/40 transition-colors"
+              >
+                No seleccionado
+              </button>
+              <div className="h-7" />
+              <div className="h-7" />
+              <div />
+            </div>
+          ))}
+          {cantripsActuales.length < cantripCount && (
+            <button
+              type="button"
+              onClick={() => setPickerNivel(0)}
+              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors mt-0.5"
+            >
+              <Plus className="h-3 w-3" /> Añadir truco
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Spell levels */}
+      {slots.map((total, idx) => {
+        if (total === 0) return null
+        const spellLevel = idx + 1
+        const spellsEsteNivel = conjurosPorNivel(spellLevel)
+        const used = casillasUsadas[spellLevel] ?? 0
+
+        return (
+          <div key={spellLevel} className="flex flex-col gap-1 mb-4">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] font-semibold text-primary uppercase tracking-wide">
+                Nivel {spellLevel}
+              </span>
+              <SpellSlotCircles
+                total={total}
+                used={used}
+                onToggle={(i) => toggleSlot(spellLevel, i)}
+              />
+              <span className="text-[9px] text-muted-foreground ml-auto">
+                {total - used}/{total}
+              </span>
+            </div>
+            <div className="grid grid-cols-[1fr_80px_80px_20px] gap-1 text-[9px] uppercase tracking-wide text-muted-foreground px-0.5 mb-0.5">
+              <span>Conjuro</span>
+              <span className="text-center">Duración</span>
+              <span className="text-center">Alcance</span>
+              <span />
+            </div>
+            {spellsEsteNivel.map((s) => (
+              <SpellRow
+                key={s.id}
+                spell={s}
+                claseNombre={claseNombre}
+                onReplace={(h) => replaceSpell(s.id, h)}
+                onRemove={() => removeSpell(s.id)}
+              />
+            ))}
+            <button
+              type="button"
+              onClick={() => setPickerNivel(spellLevel)}
+              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors mt-0.5"
+            >
+              <Plus className="h-3 w-3" /> Añadir conjuro de nivel {spellLevel}
             </button>
           </div>
-          <Input value={s.escuela} onChange={(e) => update(s.id, { escuela: e.target.value })}
-            placeholder="Evocación" className="h-6 text-[11px] bg-background border-border/40" />
-        </div>
-      ))}
-      <Button type="button" variant="outline" size="sm" onClick={add} className="mt-1 border-dashed border-border/60 text-xs h-7">
-        <Plus className="h-3 w-3 mr-1" /> Añadir conjuro
-      </Button>
+        )
+      })}
+
+      {/* Global picker trigger */}
+      {pickerNivel !== null && (
+        <SpellPickerDialog
+          open
+          nivel={pickerNivel}
+          claseNombre={claseNombre}
+          onSelect={(h) => { addSpell(pickerNivel, h); setPickerNivel(null) }}
+          onClose={() => setPickerNivel(null)}
+        />
+      )}
     </div>
   )
 }
@@ -528,7 +799,7 @@ function DetailsTab({ draft, onChange }: BaseProps) {
 
 // ── RightPanel principal ───────────────────────────────────────────────────
 
-export default function RightPanel({ draft, onChange, razaDetalle, claseDetalle, trasfondoDetalle }: Props) {
+export default function RightPanel({ draft, onChange, razaDetalle, claseDetalle, trasfondoDetalle, subclaseDetalle }: Props) {
   const [tab, setTab] = useState('armas')
 
   return (
@@ -545,7 +816,7 @@ export default function RightPanel({ draft, onChange, razaDetalle, claseDetalle,
         <TabsContent value="armas"    className="mt-0"><WeaponsTab   draft={draft} onChange={onChange} claseDetalle={claseDetalle} /></TabsContent>
         <TabsContent value="defensa"  className="mt-0"><DefenseTab   draft={draft} onChange={onChange} claseDetalle={claseDetalle} /></TabsContent>
         <TabsContent value="equipo"   className="mt-0"><EquipmentTab draft={draft} onChange={onChange} /></TabsContent>
-        <TabsContent value="conjuros" className="mt-0"><SpellsTab    draft={draft} onChange={onChange} /></TabsContent>
+        <TabsContent value="conjuros" className="mt-0"><SpellsTab    draft={draft} onChange={onChange} claseDetalle={claseDetalle} subclaseDetalle={subclaseDetalle} /></TabsContent>
         <TabsContent value="rasgos"   className="mt-0">
           <FeatsTab draft={draft} onChange={onChange} razaDetalle={razaDetalle} claseDetalle={claseDetalle} trasfondoDetalle={trasfondoDetalle} />
         </TabsContent>

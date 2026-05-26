@@ -81,6 +81,11 @@ export interface SpellEntry {
   nivel: number
   escuela: string
   descripcion: string
+  tiempo_lanzamiento?: string
+  alcance?: string
+  duracion?: string
+  concentracion?: boolean
+  ritual?: boolean
 }
 
 export interface FeatEntry {
@@ -145,6 +150,7 @@ export interface CharacterDraft {
   equipo_inicial: EquipoInicial
   monedas: Monedas
   conjuros: SpellEntry[]
+  casillas_usadas: Record<number, number>
   rasgos: FeatEntry[]
   detalles: CharacterDetalles
 }

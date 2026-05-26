@@ -54,8 +54,9 @@ export function draftToCampos(
     { nombre_campo: 'equipo',         valor: draft.equipo },
     { nombre_campo: 'equipo_inicial', valor: draft.equipo_inicial },
     { nombre_campo: 'monedas',        valor: draft.monedas },
-    { nombre_campo: 'conjuros',    valor: draft.conjuros },
-    { nombre_campo: 'rasgos',      valor: draft.rasgos },
+    { nombre_campo: 'conjuros',        valor: draft.conjuros },
+    { nombre_campo: 'casillas_usadas', valor: draft.casillas_usadas ?? {} },
+    { nombre_campo: 'rasgos',          valor: draft.rasgos },
     { nombre_campo: 'detalles',    valor: draft.detalles },
   ]
 
@@ -131,6 +132,9 @@ export function fichaToCharacterDraft(ficha: FichaDetalle): Partial<CharacterDra
 
   const conjuros = get<CharacterDraft['conjuros']>('conjuros')
   if (conjuros) draft.conjuros = conjuros
+
+  const casillasUsadas = get<CharacterDraft['casillas_usadas']>('casillas_usadas')
+  if (casillasUsadas) draft.casillas_usadas = casillasUsadas
 
   const rasgos = get<CharacterDraft['rasgos']>('rasgos')
   if (rasgos) draft.rasgos = rasgos

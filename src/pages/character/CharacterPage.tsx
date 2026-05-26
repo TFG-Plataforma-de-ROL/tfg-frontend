@@ -48,6 +48,7 @@ const DEFAULT_DRAFT: CharacterDraft = {
   equipo_inicial: { clase_opcion: null, trasfondo_opcion: null },
   monedas: { platino: 0, oro: 0, plata: 0, cobre: 0 },
   conjuros: [],
+  casillas_usadas: {},
   rasgos: [],
   detalles: {
     historia: '', rasgos_de_personalidad: '', ideales: '',
@@ -79,6 +80,7 @@ export default function CharacterPage() {
   const [razaDetalle,      setRazaDetalle]      = useState<ItemDetalle | null>(null)
   const [claseDetalle,     setClaseDetalle]     = useState<ItemDetalle | null>(null)
   const [trasfondoDetalle, setTrasfondoDetalle] = useState<ItemDetalle | null>(null)
+  const [subclaseDetalle,  setSubclaseDetalle]  = useState<ItemDetalle | null>(null)
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -135,6 +137,11 @@ export default function CharacterPage() {
     if (!draft.id_trasfondo) { setTrasfondoDetalle(null); return }
     itemService.getItemById(draft.id_trasfondo).then(setTrasfondoDetalle).catch(() => setTrasfondoDetalle(null))
   }, [draft.id_trasfondo])
+
+  useEffect(() => {
+    if (!draft.id_subclase) { setSubclaseDetalle(null); return }
+    itemService.getItemById(draft.id_subclase).then(setSubclaseDetalle).catch(() => setSubclaseDetalle(null))
+  }, [draft.id_subclase])
 
   useEffect(() => {
     if (!trasfondoDetalle) return
@@ -392,6 +399,7 @@ export default function CharacterPage() {
                 razaDetalle={razaDetalle}
                 claseDetalle={claseDetalle}
                 trasfondoDetalle={trasfondoDetalle}
+                subclaseDetalle={subclaseDetalle}
               />
             </div>
 
