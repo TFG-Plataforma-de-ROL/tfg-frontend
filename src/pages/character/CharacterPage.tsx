@@ -7,6 +7,7 @@ import { personajeService } from '@/services/personajeService'
 import { fichaService, draftToCampos, fichaToCharacterDraft } from '@/services/fichaService'
 import { getTrasfondoHabilidades, getClaseInfo } from '@/utils/characterDetails'
 import { getMod } from '@/utils/dnd'
+import { exportCharacterToPDF } from '@/utils/characterExport'
 import { itemService } from '@/services/itemService'
 import type { Item, ItemDetalle } from '@/services/itemService'
 import type { CharacterDraft } from '@/types/character'
@@ -299,8 +300,7 @@ export default function CharacterPage() {
   }
 
   const handleExport = () => {
-    if (!personajeId) return
-    window.open(`/api/personajes/${personajeId}/export`, '_blank')
+    exportCharacterToPDF({ draft, razas, clases, trasfondos, claseDetalle, subclaseDetalle })
   }
 
   const dialogConfig = dialogOpen ? {
