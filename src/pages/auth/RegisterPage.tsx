@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { APP_NAME } from '@/utils/constants'
+import logo3 from '@/assets/logo3.png'
 
 export default function RegisterPage() {
   const { register, isLoading } = useAuth()
@@ -59,10 +59,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
-      <span className="mb-6 text-sm font-semibold tracking-widest text-primary uppercase">
-        {APP_NAME}
-      </span>
+    <div className="min-h-screen flex flex-col items-center justify-start pt-4 bg-background px-4">
+      <img src={logo3} alt="Logo" className="mb-6 h-40 object-contain" />
 
       <Card className="w-full max-w-sm rounded-2xl border-border/50 shadow-xl">
         <CardHeader className="pb-2 text-center">

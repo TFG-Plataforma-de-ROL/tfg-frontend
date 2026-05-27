@@ -2,9 +2,9 @@ import { useNavigate } from 'react-router-dom'
 import { LogOut } from 'lucide-react'
 import { useAuth } from '@/hooks'
 import { ROUTES } from '@/config/routes'
-import { APP_NAME } from '@/utils/constants'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import logo3 from '@/assets/logo3.png'
 
 export default function Header() {
   const { usuario, logout } = useAuth()
@@ -21,9 +21,9 @@ export default function Header() {
     <header className="sticky top-0 z-50 flex items-center justify-between px-6 h-16 bg-card border-b border-border/60">
       <button
         onClick={() => navigate(ROUTES.PRIVATE.DASHBOARD)}
-        className="text-xl font-bold tracking-tight text-primary hover:text-primary/80 transition-colors select-none"
+        className="select-none"
       >
-        {APP_NAME}
+        <img src={logo3} alt="Logo" className="h-24 object-contain" />
       </button>
 
       <div className="flex items-center gap-3">
