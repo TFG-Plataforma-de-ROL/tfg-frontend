@@ -66,6 +66,8 @@ export interface EquipmentEntry {
 export interface EquipoInicial {
   clase_opcion: string | null
   trasfondo_opcion: 'a' | 'b' | null
+  monedas_clase: Monedas
+  monedas_trasfondo: Monedas
 }
 
 export interface Monedas {

@@ -129,7 +129,12 @@ export function fichaToCharacterDraft(ficha: FichaDetalle): Partial<CharacterDra
   if (equipo) draft.equipo = equipo
 
   const equipoInicial = get<CharacterDraft['equipo_inicial']>('equipo_inicial')
-  if (equipoInicial) draft.equipo_inicial = equipoInicial
+  if (equipoInicial) draft.equipo_inicial = {
+    ...draft.equipo_inicial,
+    ...equipoInicial,
+    monedas_clase:    equipoInicial.monedas_clase    ?? { platino: 0, oro: 0, plata: 0, cobre: 0 },
+    monedas_trasfondo: equipoInicial.monedas_trasfondo ?? { platino: 0, oro: 0, plata: 0, cobre: 0 },
+  }
 
   const monedas = get<CharacterDraft['monedas']>('monedas')
   if (monedas) draft.monedas = monedas

@@ -46,7 +46,7 @@ const DEFAULT_DRAFT: CharacterDraft = {
   escudo_equipado: false,
   armas: [],
   equipo: [],
-  equipo_inicial: { clase_opcion: null, trasfondo_opcion: null },
+  equipo_inicial: { clase_opcion: null, trasfondo_opcion: null, monedas_clase: { platino: 0, oro: 0, plata: 0, cobre: 0 }, monedas_trasfondo: { platino: 0, oro: 0, plata: 0, cobre: 0 } },
   monedas: { platino: 0, oro: 0, plata: 0, cobre: 0 },
   conjuros: [],
   casillas_usadas: {},
@@ -233,23 +233,37 @@ export default function CharacterPage() {
 
       // Clase cambia → limpiar equipo/armas y resetear hp_por_nivel
       if (partial.id_clase !== undefined && partial.id_clase !== prev.id_clase) {
+        const mc = next.equipo_inicial.monedas_clase
         next = {
           ...next,
           hp_por_nivel: [],
           armas:  next.armas.filter(a => a.fuente !== 'clase'),
           equipo: next.equipo.filter(e => e.fuente !== 'clase'),
-          equipo_inicial: { ...next.equipo_inicial, clase_opcion: null },
+          monedas: {
+            platino: Math.max(0, next.monedas.platino - mc.platino),
+            oro:     Math.max(0, next.monedas.oro     - mc.oro),
+            plata:   Math.max(0, next.monedas.plata   - mc.plata),
+            cobre:   Math.max(0, next.monedas.cobre   - mc.cobre),
+          },
+          equipo_inicial: { ...next.equipo_inicial, clase_opcion: null, monedas_clase: { platino: 0, oro: 0, plata: 0, cobre: 0 } },
         }
       }
 
       if (partial.id_trasfondo !== undefined && partial.id_trasfondo !== prev.id_trasfondo) {
         const habsSinTrasfondo = { ...next.habilidades }
         prev.habilidades_trasfondo.forEach(k => { habsSinTrasfondo[k] = false })
+        const mt = next.equipo_inicial.monedas_trasfondo
         next = {
           ...next,
           armas:  next.armas.filter(a => a.fuente !== 'trasfondo'),
           equipo: next.equipo.filter(e => e.fuente !== 'trasfondo'),
-          equipo_inicial: { ...next.equipo_inicial, trasfondo_opcion: null },
+          monedas: {
+            platino: Math.max(0, next.monedas.platino - mt.platino),
+            oro:     Math.max(0, next.monedas.oro     - mt.oro),
+            plata:   Math.max(0, next.monedas.plata   - mt.plata),
+            cobre:   Math.max(0, next.monedas.cobre   - mt.cobre),
+          },
+          equipo_inicial: { ...next.equipo_inicial, trasfondo_opcion: null, monedas_trasfondo: { platino: 0, oro: 0, plata: 0, cobre: 0 } },
           habilidades: habsSinTrasfondo,
           habilidades_trasfondo: [],
         }

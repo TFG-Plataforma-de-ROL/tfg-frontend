@@ -1,6 +1,15 @@
-import type { WeaponEntry, EquipmentEntry } from '@/types/character'
+import type { WeaponEntry, EquipmentEntry, Monedas } from '@/types/character'
 import { ARMAS } from '@/data/armasData'
 import { ARMADURAS } from '@/data/armadurasData'
+
+const ZERO_MONEDAS: Monedas = { platino: 0, oro: 0, plata: 0, cobre: 0 }
+
+const MONEDA_KEY: Record<string, keyof Monedas> = {
+  pp: 'platino',
+  po: 'oro',
+  pa: 'plata',
+  pc: 'cobre',
+}
 
 function norm(s: string): string {
   return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
@@ -30,13 +39,14 @@ export interface ClasificacionEquipo {
   escudo: boolean
   armas: Array<Omit<WeaponEntry, 'id'>>
   equipo: Array<Omit<EquipmentEntry, 'id'>>
+  monedas: Monedas
 }
 
 export function clasificarEquipo(
   items: string[],
   fuente: 'clase' | 'trasfondo',
 ): ClasificacionEquipo {
-  const result: ClasificacionEquipo = { armaduraId: null, escudo: false, armas: [], equipo: [] }
+  const result: ClasificacionEquipo = { armaduraId: null, escudo: false, armas: [], equipo: [], monedas: { ...ZERO_MONEDAS } }
 
   for (const raw of items) {
     const str = raw.trim()
@@ -74,6 +84,16 @@ export function clasificarEquipo(
         result.equipo.push({ nombre: `${qty - 1} ${arma.nombre}`, cantidad: qty - 1, fuente })
       }
       continue
+    }
+
+    // Currency: "50 po", "10 pp", "25 pa", "100 pc"
+    const monedaMatch = str.match(/^(\d+)\s*(pp|po|pa|pc)$/i)
+    if (monedaMatch) {
+      const monedaKey = MONEDA_KEY[monedaMatch[2].toLowerCase()]
+      if (monedaKey) {
+        result.monedas[monedaKey] += parseInt(monedaMatch[1])
+        continue
+      }
     }
 
     // Generic inventory item

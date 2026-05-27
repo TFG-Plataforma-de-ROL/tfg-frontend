@@ -231,12 +231,26 @@ export default function LeftPanel({ draft, razas, clases, trasfondos, razaDetall
     let armaduraId    = draft.armadura_equipada
     let escudoEquipado = draft.escudo_equipado
 
+    // Base monedas: subtract previous initial equipment monedas
+    const prevMC = draft.equipo_inicial.monedas_clase    ?? { platino: 0, oro: 0, plata: 0, cobre: 0 }
+    const prevMT = draft.equipo_inicial.monedas_trasfondo ?? { platino: 0, oro: 0, plata: 0, cobre: 0 }
+    let monedas = {
+      platino: Math.max(0, draft.monedas.platino - prevMC.platino - prevMT.platino),
+      oro:     Math.max(0, draft.monedas.oro     - prevMC.oro     - prevMT.oro),
+      plata:   Math.max(0, draft.monedas.plata   - prevMC.plata   - prevMT.plata),
+      cobre:   Math.max(0, draft.monedas.cobre   - prevMC.cobre   - prevMT.cobre),
+    }
+
+    let monedasClase    = { platino: 0, oro: 0, plata: 0, cobre: 0 }
+    let monedasTrasfondo = { platino: 0, oro: 0, plata: 0, cobre: 0 }
+
     if (claseOpcion && claseEquipo) {
       const c = clasificarEquipo(claseEquipo[claseOpcion] ?? [], 'clase')
       armas  = [...armas,  ...c.armas.map(a => ({ ...a, id: crypto.randomUUID() }))]
       equipo = [...equipo, ...c.equipo.map(e => ({ ...e, id: crypto.randomUUID() }))]
       if (c.armaduraId)  armaduraId     = c.armaduraId
       if (c.escudo)      escudoEquipado = true
+      monedasClase = c.monedas
     }
 
     if (trasfondoOpcion) {
@@ -246,6 +260,14 @@ export default function LeftPanel({ draft, razas, clases, trasfondos, razaDetall
       equipo = [...equipo, ...t.equipo.map(e => ({ ...e, id: crypto.randomUUID() }))]
       if (t.armaduraId)  armaduraId     = t.armaduraId
       if (t.escudo)      escudoEquipado = true
+      monedasTrasfondo = t.monedas
+    }
+
+    monedas = {
+      platino: monedas.platino + monedasClase.platino + monedasTrasfondo.platino,
+      oro:     monedas.oro     + monedasClase.oro     + monedasTrasfondo.oro,
+      plata:   monedas.plata   + monedasClase.plata   + monedasTrasfondo.plata,
+      cobre:   monedas.cobre   + monedasClase.cobre   + monedasTrasfondo.cobre,
     }
 
     const armaduraData = ARMADURAS.find(a => a.id === armaduraId) ?? null
@@ -254,10 +276,11 @@ export default function LeftPanel({ draft, razas, clases, trasfondos, razaDetall
     onChange({
       armas,
       equipo,
+      monedas,
       armadura_equipada: armaduraId,
       escudo_equipado:   escudoEquipado,
       combate: { ...draft.combate, ca },
-      equipo_inicial: { clase_opcion: claseOpcion, trasfondo_opcion: trasfondoOpcion },
+      equipo_inicial: { clase_opcion: claseOpcion, trasfondo_opcion: trasfondoOpcion, monedas_clase: monedasClase, monedas_trasfondo: monedasTrasfondo },
     })
   }
 
