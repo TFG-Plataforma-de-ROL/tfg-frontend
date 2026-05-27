@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 
 interface PerfilData {
   id_usuario: number
@@ -50,6 +51,8 @@ export default function ProfilePage() {
   const [avatarMsg, setAvatarMsg] = useState<Msg | null>(null)
 
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [deleteDialog, setDeleteDialog] = useState<{ id: number; nombre: string } | null>(null)
 
   const [nuevoNombre, setNuevoNombre] = useState('')
   const [nombreLoading, setNombreLoading] = useState(false)
@@ -125,12 +128,18 @@ export default function ProfilePage() {
     }
   }
 
-  const handleDeletePersonaje = async (id: number, nombre: string) => {
-    if (!window.confirm(`¿Eliminar el personaje "${nombre}"? Esta acción no se puede deshacer.`)) return
+  const handleDeletePersonaje = async () => {
+    if (!deleteDialog) return
+    const { id } = deleteDialog
     setDeletingId(id)
+    setDeleteError(null)
     try {
       await personajeService.deletePersonaje(id)
       setPerfil((p) => p ? { ...p, personajes: p.personajes.filter((pj) => pj.id_personaje !== id) } : p)
+      setDeleteDialog(null)
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { error?: string } } }
+      setDeleteError(e.response?.data?.error ?? 'Error al eliminar el personaje')
     } finally {
       setDeletingId(null)
     }
@@ -271,6 +280,9 @@ export default function ProfilePage() {
           <CardTitle className="text-base">Lista Personajes</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
+          {deleteError && (
+            <p className="text-xs text-destructive">{deleteError}</p>
+          )}
           {Object.keys(personajesPorSistema).length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Todavía no has creado ningún personaje.
@@ -289,7 +301,7 @@ export default function ProfilePage() {
                         {p.nombre}
                       </button>
                       <button
-                        onClick={() => handleDeletePersonaje(p.id_personaje, p.nombre)}
+                        onClick={() => setDeleteDialog({ id: p.id_personaje, nombre: p.nombre })}
                         disabled={deletingId === p.id_personaje}
                         title="Eliminar personaje"
                         className="p-1.5 rounded-md border border-border bg-secondary text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/40 transition-all disabled:opacity-50"
@@ -304,6 +316,30 @@ export default function ProfilePage() {
           )}
         </CardContent>
       </Card>
+      <Dialog open={!!deleteDialog} onOpenChange={(open) => { if (!open) setDeleteDialog(null) }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Eliminar personaje</DialogTitle>
+            <DialogDescription>
+              ¿Seguro que quieres eliminar <span className="font-medium text-foreground">"{deleteDialog?.nombre}"</span>? Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteError && <p className="text-xs text-destructive mt-1">{deleteError}</p>}
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" size="sm" onClick={() => setDeleteDialog(null)} disabled={!!deletingId}>
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleDeletePersonaje}
+              disabled={!!deletingId}
+              className="bg-destructive hover:bg-destructive/90 text-white"
+            >
+              {deletingId ? 'Eliminando...' : 'Eliminar'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
