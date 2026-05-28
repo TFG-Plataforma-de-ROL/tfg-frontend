@@ -39,6 +39,8 @@ export default function SpellPickerDialog({ open, nivel, claseNombre, onSelect, 
     return list
   }, [nivel, claseNombre, search])
 
+  if (!open) return null
+
   const titulo = nivel === 0 ? 'Seleccionar Truco' : `Seleccionar Conjuro de Nivel ${nivel}`
 
   return (
