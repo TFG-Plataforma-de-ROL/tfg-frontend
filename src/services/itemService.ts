@@ -13,9 +13,18 @@ export interface ItemDetalle extends Item {
 }
 
 export const itemService = {
-  getItems: (tipoItem: string, idSistemaRol: number): Promise<Item[]> =>
-    api.get('/api/items', { params: { tipo_item: tipoItem, id_sistema_rol: idSistemaRol } }).then((r) => r.data),
+  getItems: (params?: { tipo_item?: string; id_sistema_rol?: number }): Promise<Item[]> =>
+    api.get('/api/items', { params }).then((r) => r.data),
 
   getItemById: (id: number): Promise<ItemDetalle> =>
     api.get(`/api/items/${id}`).then((r) => r.data),
+
+  createItem: (data: { nombre: string; tipo_item: string; id_sistema_rol?: number; ruta_json?: string }): Promise<Item> =>
+    api.post('/api/items', data).then((r) => r.data),
+
+  updateItem: (id: number, data: { nombre?: string; tipo_item?: string; id_sistema_rol?: number; ruta_json?: string }): Promise<Item> =>
+    api.put(`/api/items/${id}`, data).then((r) => r.data),
+
+  deleteItem: (id: number): Promise<void> =>
+    api.delete(`/api/items/${id}`).then(() => undefined),
 }

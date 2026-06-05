@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { LogOut } from 'lucide-react'
+import { LogOut, ShieldCheck } from 'lucide-react'
 import { useAuth } from '@/hooks'
 import { ROUTES } from '@/config/routes'
 import { Button } from '@/components/ui/button'
@@ -27,6 +27,18 @@ export default function Header() {
       </button>
 
       <div className="flex items-center gap-3">
+        {usuario?.is_admin && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(ROUTES.ADMIN.DASHBOARD)}
+            className="gap-1.5 text-fuchsia-400 border-fuchsia-500/40 hover:bg-fuchsia-500/10 hidden sm:flex"
+          >
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Admin
+          </Button>
+        )}
+
         <button
           onClick={() => navigate(ROUTES.PRIVATE.PROFILE)}
           className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:block"

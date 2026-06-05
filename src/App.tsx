@@ -8,6 +8,12 @@ import CharacterPage from '@/pages/character/CharacterPage'
 import Layout from '@/components/Layout'
 import LayoutFull from '@/components/LayoutFull'
 import ProtectedRoute from '@/components/ProtectedRoute'
+import AdminRoute from '@/components/AdminRoute'
+import AdminLayout from '@/pages/admin/AdminLayout'
+import AdminDashboard from '@/pages/admin/AdminDashboard'
+import SistemasRolPage from '@/pages/admin/SistemasRolPage'
+import PlantillasPage from '@/pages/admin/PlantillasPage'
+import ItemsPage from '@/pages/admin/ItemsPage'
 
 function App() {
   return (
@@ -23,6 +29,13 @@ function App() {
       <Route element={<ProtectedRoute><LayoutFull /></ProtectedRoute>}>
         <Route path={ROUTES.PRIVATE.PERSONAJE_NUEVO} element={<CharacterPage />} />
         <Route path={ROUTES.PRIVATE.PERSONAJE_EDITAR} element={<CharacterPage />} />
+      </Route>
+
+      <Route element={<AdminRoute><AdminLayout /></AdminRoute>}>
+        <Route path={ROUTES.ADMIN.DASHBOARD} element={<AdminDashboard />} />
+        <Route path={ROUTES.ADMIN.SISTEMAS_ROL} element={<SistemasRolPage />} />
+        <Route path={ROUTES.ADMIN.PLANTILLAS} element={<PlantillasPage />} />
+        <Route path={ROUTES.ADMIN.ITEMS} element={<ItemsPage />} />
       </Route>
 
       <Route path="/" element={<Navigate to={ROUTES.PUBLIC.LOGIN} replace />} />
