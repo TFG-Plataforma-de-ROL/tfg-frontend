@@ -15,6 +15,31 @@ const TIPOS_ITEM = [
   'subclase_guerrero', 'subclase_mago', 'subclase_picaro', 'subclase_clerigo',
 ]
 
+// Categorías de filtro. Cada categoría agrupa uno o varios tipo_item reales.
+// Las que tienen varios subtipos muestran un segundo filtro para acotar.
+type Categoria = {
+  id: string
+  label: string
+  tipos: { value: string; label: string }[]
+}
+
+const CATEGORIAS: Categoria[] = [
+  { id: 'clase', label: 'Clases', tipos: [{ value: 'clase', label: 'Clases' }] },
+  {
+    id: 'subclase',
+    label: 'Subclases',
+    tipos: [
+      { value: 'subclase_guerrero', label: 'Guerrero' },
+      { value: 'subclase_mago', label: 'Mago' },
+      { value: 'subclase_picaro', label: 'Pícaro' },
+      { value: 'subclase_clerigo', label: 'Clérigo' },
+    ],
+  },
+  { id: 'estilo_combate', label: 'Estilos de combate', tipos: [{ value: 'estilo_combate', label: 'Estilos de combate' }] },
+  { id: 'trasfondo', label: 'Trasfondo', tipos: [{ value: 'trasfondo', label: 'Trasfondo' }] },
+  { id: 'raza', label: 'Razas', tipos: [{ value: 'raza', label: 'Razas' }] },
+]
+
 type ItemForm = { nombre: string; tipo_item: string; id_sistema_rol: string; ruta_json: string }
 const emptyForm: ItemForm = { nombre: '', tipo_item: TIPOS_ITEM[0], id_sistema_rol: '', ruta_json: '' }
 
@@ -31,7 +56,8 @@ export default function ItemsPage() {
   const [sistemas, setSistemas] = useState<SistemaRol[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [filterTipo, setFilterTipo] = useState<string>('')
+  const [filterCategoria, setFilterCategoria] = useState<string>('') // '' = Todos
+  const [filterSubtipo, setFilterSubtipo] = useState<string>('') // '' = Todos los subtipos
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Item | null>(null)
@@ -119,8 +145,26 @@ export default function ItemsPage() {
   const nombreSistema = (id: number | null) =>
     id ? (sistemas.find((s) => s.id_sistema_rol === id)?.nombre ?? `ID ${id}`) : null
 
-  const filtered = filterTipo ? items.filter((i) => i.tipo_item === filterTipo) : items
-  const tiposPresentes = [...new Set(items.map((i) => i.tipo_item))].sort()
+  const categoriaActiva = CATEGORIAS.find((c) => c.id === filterCategoria) ?? null
+
+  const filtered = (() => {
+    if (!categoriaActiva) return items
+    // Si hay un subtipo concreto seleccionado, filtra por él; si no, por todos los tipos de la categoría.
+    const tiposObjetivo = filterSubtipo
+      ? [filterSubtipo]
+      : categoriaActiva.tipos.map((t) => t.value)
+    return items.filter((i) => tiposObjetivo.includes(i.tipo_item))
+  })()
+
+  const countCategoria = (cat: Categoria) => {
+    const tipos = cat.tipos.map((t) => t.value)
+    return items.filter((i) => tipos.includes(i.tipo_item)).length
+  }
+
+  const selectCategoria = (id: string) => {
+    setFilterCategoria(id)
+    setFilterSubtipo('')
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -134,35 +178,64 @@ export default function ItemsPage() {
         </Button>
       </div>
 
-      {/* Filtro por tipo */}
+      {/* Filtro por categoría */}
       <div className="flex flex-wrap gap-2">
         <button
-          onClick={() => setFilterTipo('')}
+          onClick={() => selectCategoria('')}
           className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-            filterTipo === ''
+            filterCategoria === ''
               ? 'bg-fuchsia-600/20 text-fuchsia-400 border-fuchsia-500/40'
               : 'border-border text-muted-foreground hover:text-foreground'
           }`}
         >
           Todos ({items.length})
         </button>
-        {tiposPresentes.map((tipo) => {
-          const count = items.filter((i) => i.tipo_item === tipo).length
-          return (
-            <button
-              key={tipo}
-              onClick={() => setFilterTipo(tipo)}
-              className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-                filterTipo === tipo
-                  ? 'bg-fuchsia-600/20 text-fuchsia-400 border-fuchsia-500/40'
-                  : 'border-border text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {tipo} ({count})
-            </button>
-          )
-        })}
+        {CATEGORIAS.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => selectCategoria(cat.id)}
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+              filterCategoria === cat.id
+                ? 'bg-fuchsia-600/20 text-fuchsia-400 border-fuchsia-500/40'
+                : 'border-border text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {cat.label} ({countCategoria(cat)})
+          </button>
+        ))}
       </div>
+
+      {/* Segundo filtro: subtipos (solo si la categoría agrupa varios) */}
+      {categoriaActiva && categoriaActiva.tipos.length > 1 && (
+        <div className="flex flex-wrap gap-2 pl-1">
+          <button
+            onClick={() => setFilterSubtipo('')}
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+              filterSubtipo === ''
+                ? 'bg-fuchsia-600/10 text-fuchsia-300 border-fuchsia-500/30'
+                : 'border-border/60 text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Todas ({countCategoria(categoriaActiva)})
+          </button>
+          {categoriaActiva.tipos.map((t) => {
+            const count = items.filter((i) => i.tipo_item === t.value).length
+            return (
+              <button
+                key={t.value}
+                onClick={() => setFilterSubtipo(t.value)}
+                className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                  filterSubtipo === t.value
+                    ? 'bg-fuchsia-600/10 text-fuchsia-300 border-fuchsia-500/30'
+                    : 'border-border/60 text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {t.label} ({count})
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
