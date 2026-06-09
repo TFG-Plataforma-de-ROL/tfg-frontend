@@ -89,14 +89,14 @@ export default function CharacterPage() {
 
   useEffect(() => {
     Promise.all([
-      itemService.getItems('raza', DND_SISTEMA_ROL_ID),
-      itemService.getItems('clase', DND_SISTEMA_ROL_ID),
-      itemService.getItems('trasfondo', DND_SISTEMA_ROL_ID),
-      itemService.getItems('estilo_combate', DND_SISTEMA_ROL_ID),
-      itemService.getItems('subclase_guerrero', DND_SISTEMA_ROL_ID),
-      itemService.getItems('subclase_mago', DND_SISTEMA_ROL_ID),
-      itemService.getItems('subclase_picaro', DND_SISTEMA_ROL_ID),
-      itemService.getItems('subclase_clerigo', DND_SISTEMA_ROL_ID),
+      itemService.getItems({ tipo_item: 'raza',             id_sistema_rol: DND_SISTEMA_ROL_ID }),
+      itemService.getItems({ tipo_item: 'clase',            id_sistema_rol: DND_SISTEMA_ROL_ID }),
+      itemService.getItems({ tipo_item: 'trasfondo',        id_sistema_rol: DND_SISTEMA_ROL_ID }),
+      itemService.getItems({ tipo_item: 'estilo_combate',   id_sistema_rol: DND_SISTEMA_ROL_ID }),
+      itemService.getItems({ tipo_item: 'subclase_guerrero',id_sistema_rol: DND_SISTEMA_ROL_ID }),
+      itemService.getItems({ tipo_item: 'subclase_mago',    id_sistema_rol: DND_SISTEMA_ROL_ID }),
+      itemService.getItems({ tipo_item: 'subclase_picaro',  id_sistema_rol: DND_SISTEMA_ROL_ID }),
+      itemService.getItems({ tipo_item: 'subclase_clerigo', id_sistema_rol: DND_SISTEMA_ROL_ID }),
     ]).then(([r, c, t, ec, sg, sm, sp, sc]) => {
       setRazas(r)
       setClases(c)

@@ -215,6 +215,7 @@ interface Props {
 export default function ItemSelectionDialog({ open, onClose, title, items, currentId, onAccept }: Props) {
   const [pendingId, setPendingId] = useState<number | null>(currentId)
   const [loading, setLoading] = useState(false)
+  const [detailError, setDetailError] = useState(false)
   const cache = useRef<Map<number, unknown>>(new Map())
 
   const [detailData, setDetailData] = useState<{ id: number; datos: unknown } | null>(null)
@@ -228,15 +229,19 @@ export default function ItemSelectionDialog({ open, onClose, title, items, curre
   const displayId = pendingId
 
   useEffect(() => {
-    if (displayId === null) { setDetailData(null); return }
+    if (displayId === null) { setDetailData(null); setDetailError(false); return }
     if (cache.current.has(displayId)) {
       setDetailData({ id: displayId, datos: cache.current.get(displayId) })
+      setDetailError(false)
       return
     }
     setLoading(true)
+    setDetailError(false)
     itemService.getItemById(displayId).then((res) => {
       cache.current.set(displayId, res.datos ?? null)
       setDetailData({ id: displayId, datos: res.datos ?? null })
+    }).catch(() => {
+      setDetailError(true)
     }).finally(() => setLoading(false))
   }, [displayId])
 
@@ -257,6 +262,9 @@ export default function ItemSelectionDialog({ open, onClose, title, items, curre
         <div className="flex flex-1 overflow-hidden">
           {/* Lista */}
           <div className="w-52 shrink-0 border-r border-border/40 overflow-y-auto">
+            {items.length === 0 && (
+              <p className="px-4 py-3 text-xs text-muted-foreground italic">No hay opciones disponibles.</p>
+            )}
             {items.map(item => (
               <button
                 key={item.id_item}
@@ -283,7 +291,10 @@ export default function ItemSelectionDialog({ open, onClose, title, items, curre
             {displayItem && loading && (
               <p className="text-sm text-muted-foreground animate-pulse">Cargando...</p>
             )}
-            {displayItem && !loading && detailData?.id === displayItem.id_item && (
+            {displayItem && !loading && detailError && (
+              <p className="text-sm text-destructive italic">No se pudo cargar la información.</p>
+            )}
+            {displayItem && !loading && !detailError && detailData?.id === displayItem.id_item && (
               <ItemDetail item={displayItem} datos={detailData.datos} />
             )}
           </div>
