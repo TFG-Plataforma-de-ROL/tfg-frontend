@@ -19,7 +19,7 @@ export const itemService = {
   getItemById: (id: number): Promise<ItemDetalle> =>
     api.get(`/api/items/${id}`).then((r) => r.data),
 
-  createItem: (data: { nombre: string; tipo_item: string; id_sistema_rol?: number; ruta_json?: string }): Promise<Item> =>
+  createItem: (data: { nombre: string; tipo_item: string; id_sistema_rol?: number; datos?: unknown; subcategoria?: string }): Promise<Item> =>
     api.post('/api/items', data).then((r) => r.data),
 
   updateItem: (id: number, data: { nombre?: string; tipo_item?: string; id_sistema_rol?: number; ruta_json?: string }): Promise<Item> =>
