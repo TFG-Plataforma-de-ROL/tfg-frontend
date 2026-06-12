@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Shield } from 'lucide-react'
+import { Shield, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import api from '@/services/api'
 
 interface Usuario {
@@ -17,6 +19,8 @@ export default function UsuariosPage() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Usuario | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     api.get<Usuario[]>('/api/usuarios')
@@ -24,6 +28,21 @@ export default function UsuariosPage() {
       .catch(() => setError('Error al cargar usuarios'))
       .finally(() => setLoading(false))
   }, [])
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      await api.delete(`/api/usuarios/${deleteTarget.id_usuario}`)
+      setUsuarios((prev) => prev.filter((u) => u.id_usuario !== deleteTarget.id_usuario))
+      setDeleteTarget(null)
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { error?: string } } }
+      setError(e.response?.data?.error ?? 'Error al eliminar el usuario')
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const admins = usuarios.filter((u) => u.is_admin).length
 
@@ -81,15 +100,46 @@ export default function UsuariosPage() {
                     <span className="text-xs text-muted-foreground">{u.email}</span>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-0.5 text-xs text-muted-foreground">
-                  <span>{u._count.personajes} personaje{u._count.personajes !== 1 ? 's' : ''}</span>
-                  <span>{new Date(u.created_at).toLocaleDateString('es-ES')}</span>
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col items-end gap-0.5 text-xs text-muted-foreground">
+                    <span>{u._count.personajes} personaje{u._count.personajes !== 1 ? 's' : ''}</span>
+                    <span>{new Date(u.created_at).toLocaleDateString('es-ES')}</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 hover:text-destructive"
+                    onClick={() => setDeleteTarget(u)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </div>
             ))
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Eliminar usuario</DialogTitle>
+            <DialogDescription>
+              ¿Seguro que quieres eliminar a{' '}
+              <span className="font-medium text-foreground">"{deleteTarget?.nombre}"</span>?
+              Se borrarán también todos sus personajes. Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" size="sm" onClick={() => setDeleteTarget(null)} disabled={deleting}>
+              Cancelar
+            </Button>
+            <Button size="sm" onClick={handleDelete} disabled={deleting} className="bg-destructive hover:bg-destructive/90 text-white">
+              {deleting ? 'Eliminando...' : 'Eliminar'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
