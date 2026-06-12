@@ -15,6 +15,7 @@ export const ROUTES = {
     SISTEMAS_ROL: '/admin/sistemas-rol',
     PLANTILLAS: '/admin/plantillas',
     ITEMS: '/admin/items',
+    USUARIOS: '/admin/usuarios',
   },
 } as const
 
@@ -29,4 +30,5 @@ export const ROUTE_PATHS = [
   ROUTES.ADMIN.SISTEMAS_ROL,
   ROUTES.ADMIN.PLANTILLAS,
   ROUTES.ADMIN.ITEMS,
+  ROUTES.ADMIN.USUARIOS,
 ]

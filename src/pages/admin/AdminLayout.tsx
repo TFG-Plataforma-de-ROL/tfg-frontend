@@ -1,13 +1,14 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Layers, BookOpen, Swords } from 'lucide-react'
+import { LayoutDashboard, Layers, BookOpen, Swords, Users } from 'lucide-react'
 import { ROUTES } from '@/config/routes'
 import Header from '@/components/Header'
 
 const navItems = [
-  { to: ROUTES.ADMIN.DASHBOARD, label: 'Panel', icon: LayoutDashboard, end: true },
-  { to: ROUTES.ADMIN.SISTEMAS_ROL, label: 'Sistemas de Rol', icon: Layers, end: false },
-  { to: ROUTES.ADMIN.PLANTILLAS, label: 'Plantillas', icon: BookOpen, end: false },
-  { to: ROUTES.ADMIN.ITEMS, label: 'Items', icon: Swords, end: false },
+  { to: ROUTES.ADMIN.DASHBOARD,    label: 'Panel',          icon: LayoutDashboard, end: true  },
+  { to: ROUTES.ADMIN.USUARIOS,     label: 'Usuarios',       icon: Users,           end: false },
+  { to: ROUTES.ADMIN.SISTEMAS_ROL, label: 'Sistemas de Rol',icon: Layers,          end: false },
+  { to: ROUTES.ADMIN.PLANTILLAS,   label: 'Plantillas',     icon: BookOpen,        end: false },
+  { to: ROUTES.ADMIN.ITEMS,        label: 'Items',          icon: Swords,          end: false },
 ]
 
 export default function AdminLayout() {

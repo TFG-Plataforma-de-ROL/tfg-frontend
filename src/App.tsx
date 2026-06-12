@@ -14,6 +14,7 @@ import AdminDashboard from '@/pages/admin/AdminDashboard'
 import SistemasRolPage from '@/pages/admin/SistemasRolPage'
 import PlantillasPage from '@/pages/admin/PlantillasPage'
 import ItemsPage from '@/pages/admin/ItemsPage'
+import UsuariosPage from '@/pages/admin/UsuariosPage'
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
         <Route path={ROUTES.ADMIN.SISTEMAS_ROL} element={<SistemasRolPage />} />
         <Route path={ROUTES.ADMIN.PLANTILLAS} element={<PlantillasPage />} />
         <Route path={ROUTES.ADMIN.ITEMS} element={<ItemsPage />} />
+        <Route path={ROUTES.ADMIN.USUARIOS} element={<UsuariosPage />} />
       </Route>
 
       <Route path="/" element={<Navigate to={ROUTES.PUBLIC.LOGIN} replace />} />

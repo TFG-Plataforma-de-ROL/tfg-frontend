@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Layers, BookOpen, Swords, ArrowRight } from 'lucide-react'
+import { Layers, BookOpen, Swords, Users, ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { sistemaRolService } from '@/services/sistemaRolService'
 import { plantillaService } from '@/services/plantillaService'
 import { itemService } from '@/services/itemService'
 import { ROUTES } from '@/config/routes'
+import api from '@/services/api'
 
 interface Stats {
   sistemas: number
   plantillas: number
   items: number
+  usuarios: number
 }
 
 export default function AdminDashboard() {
@@ -20,16 +22,29 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([
+    Promise.allSettled([
       sistemaRolService.getSistemasRol(),
       plantillaService.getPlantillas(),
       itemService.getItems(),
-    ]).then(([sistemas, plantillas, items]) => {
-      setStats({ sistemas: sistemas.length, plantillas: plantillas.length, items: items.length })
+      api.get<{ id_usuario: number }[]>('/api/usuarios'),
+    ]).then(([sistemas, plantillas, items, usuarios]) => {
+      setStats({
+        sistemas: sistemas.status === 'fulfilled' ? sistemas.value.length : 0,
+        plantillas: plantillas.status === 'fulfilled' ? plantillas.value.length : 0,
+        items: items.status === 'fulfilled' ? items.value.length : 0,
+        usuarios: usuarios.status === 'fulfilled' ? usuarios.value.data.length : 0,
+      })
     }).finally(() => setLoading(false))
   }, [])
 
   const cards = [
+    {
+      title: 'Usuarios',
+      icon: Users,
+      value: stats?.usuarios,
+      description: 'Usuarios registrados en la plataforma',
+      route: ROUTES.ADMIN.USUARIOS,
+    },
     {
       title: 'Sistemas de Rol',
       icon: Layers,
@@ -62,7 +77,7 @@ export default function AdminDashboard() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map(({ title, icon: Icon, value, description, route }) => (
           <Card key={title} className="border-border/50 hover:border-fuchsia-500/40 transition-colors">
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
